@@ -166,13 +166,13 @@ sub resolve_dispatch {
     #attempt more expensive lookups
     my ($tbl, @matches, @args);
     RESOLVE_CRIT: foreach (TYPE_CHAINED, TYPE_DYNAMIC) {
-        $tbl = $dispatch_tbl->{STATIC};
-        @matches = reverse(keys(%$static_tbl));
+        $dtype_tbl = $dispatch_tbl->{$_};
+        @matches = reverse(keys(%$dtype_tbl));
         @args;
         foreach (@matches) {
 
             next unless ($crit =~ /$_/);
-            $sub = $dispatch_tbl->{$_};
+            $sub = $dtype_tbl->{$_};
             $sub = eval("\\\&$sub")
                 unless (UNIVERSAL::can($self, $sub));
             if ($sub) {
