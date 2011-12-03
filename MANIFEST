@@ -1,0 +1,5 @@
+Build.PL
+lib/Criteria/Compile.pm
+lib/Criteria/Criteria.pod
+MANIFEST			This list of files
+README
