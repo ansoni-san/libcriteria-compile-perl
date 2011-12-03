@@ -40,6 +40,7 @@ my $DEFAULT_CRITERIA_DISPATCH_TBL = {
     CHAINED => {},
     DYNAMIC => {
         qw/^(.*)_like$/ => qw/_gen_like_sub/,
+        qw/^(.*)_matches$/ => qw/_gen_matches_sub/,
         qw/^(.*)_is$/ => qw/_gen_is_sub/,
         qw/^(.*)_less_than$/ => qw/_gen_less_than_sub/,
         qw/^(.*)_greater_than$/ => qw/_gen_greater_than_sub/,
@@ -235,7 +236,7 @@ sub _gen_is_sub {
     return unless ($op);
     return sub {
         (ref($_[0])
-            and (local($_) = $_[0]->$get($op)))
+            and (local($_) = $get->($_[0], $op)))
             ? ($_ eq $val)
             : 0;
     };
@@ -249,8 +250,22 @@ sub _gen_like_sub {
     return unless ($op);
     return sub {
         (ref($_[0])
-            and (local($_) = $_[0]->$get($op)))
+            and (local($_) = $get->($_[0], $op)))
             ? scalar($_ =~ qr/$val/)
+            : 0;
+    };
+}
+
+
+sub _gen_matches_sub {
+
+    my ($context, $val, $op) = @_;
+    my $get = $context->export_getter();
+    return unless ($op);
+    return sub {
+        (ref($_[0])
+            and (local($_) = $get->($_[0], $op)))
+            ? ($_ ~~ $val)
             : 0;
     };
 }
@@ -263,7 +278,7 @@ sub _gen_less_than_sub {
     return unless ($op);
     return sub {
         (ref($_[0])
-            and (local($_) = $_[0]->$get($op)))
+            and (local($_) = $get->($_[0], $op)))
             ? ($_ lt $val)
             : 0;
     };
@@ -277,7 +292,7 @@ sub _gen_greater_than_sub {
     return unless ($op);
     return sub {
         (ref($_[0])
-            and (local($_) = $_[0]->$get($op)))
+            and (local($_) = $get->($_[0], $op)))
             ? ($_ gt $val)
             : 0;
     };
@@ -294,7 +309,7 @@ sub _gen_sooner_than_sub {
         ->now()->add_duration(%$val));
     return sub {
         (ref($_[0])
-            and (local($_) = $_[0]->$get($op)))
+            and (local($_) = $get->($_[0], $op)))
             ? ($_->subtract($val)->is_negative())
             : 0;
     };
@@ -312,7 +327,7 @@ sub _gen_later_than_sub {
         ->now()->add_duration(%$val));
     return sub {
         (ref($_[0])
-            and (local($_) = $_[0]->$get($op)))
+            and (local($_) = $get->($_[0], $op)))
             ? ($_->subtract($val)->is_positive())
             : 0;
     };
