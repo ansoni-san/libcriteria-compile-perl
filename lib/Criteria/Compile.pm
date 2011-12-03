@@ -57,7 +57,7 @@ my $DEFAULT_CRITERIA_DISPATCH_TBL = {
 sub new {
 
     my ($class, $crit) = @_;
-    $self = bless(
+    my $self = bless(
         {dispatch_tbl => {}, exec_sub => sub { 1 }},
         $class);
 
@@ -140,7 +140,7 @@ sub compile {
             push(@action_list,
                 ((ref($sub) eq '')
                     ? $self->$sub($crit->{$_}, @args)
-                    : $sub($self, $crit->{$_}, @args)));
+                    : $sub->($self, $crit->{$_}, @args)));
         }
         #compile all action subs into single sub
         ($self->{exec_sub} = $self
@@ -164,18 +164,19 @@ sub resolve_dispatch {
     return $sub if ($sub);
 
     #attempt more expensive lookups
-    my ($tbl, @matches, @args);
+    my ($dtype_tbl, @matches, @args);
     RESOLVE_CRIT: foreach (TYPE_CHAINED, TYPE_DYNAMIC) {
         $dtype_tbl = $dispatch_tbl->{$_};
         @matches = reverse(keys(%$dtype_tbl));
-        @args;
         foreach (@matches) {
 
             next unless ($crit =~ /$_/);
             $sub = $dtype_tbl->{$_};
-            $sub = eval("\\\&$sub")
-                unless (UNIVERSAL::can($self, $sub));
             if ($sub) {
+                #attempt to retrieve subref if not a method
+                $sub = ((exists &$sub) ? \&$sub : $sub)
+                    unless (UNIVERSAL::can($self, $sub));
+                #prepare args for generator    
                 @args = map {  $+[$_]
                     ? substr($crit, $-[$_], $+[$_] - $-[$_])
                     : undef } 1..$#-;
@@ -214,23 +215,29 @@ sub _compile_exec_sub {
         : $sub;
 }
 
+#EXPERIMENTAL
+{
+    #private vars
+    my $ret_stmt = 'return 1;';
+    my $ret_repl = 'return 0 unless';
 
-sub _expr_flatten_sub {
+    #public subs
+    sub _expr_flatten_sub {
 
-    my @frags = Data::Dump::Streamer::Dump(@_);
-    my @matches;
-    foreach (@frags) {
-        #NOTE : SUPER FRAGILE, NOT VERY USEFUL
-        #       FIND A BETTER WAY!!
-        if (@matches = ($_ =~ /^(.*[\^w])return([^\w].*)$/)) {
-            $_ = join('', $matches[0], $ret_repl, $matches[1]);
+        my @frags = Data::Dump::Streamer::Dump(@_);
+        my @matches;
+        foreach (@frags) {
+            #NOTE : SUPER FRAGILE, NOT VERY USEFUL
+            #       FIND A BETTER WAY!!
+            if (@matches = ($_ =~ /^(.*[\^w])return([^\w].*)$/)) {
+                $_ = join('', $matches[0], $ret_repl, $matches[1]);
+            }
         }
+        push(@frags, $ret_stmt);
+        return eval(join('',
+            'sub { ', @frags, ' }'));
     }
-    push(@frags, $ret_stmt);
-    return eval(join('',
-        'sub { ', @frags, ' }'));
 }
-
 
 
 #CRITERIA FACTORY ROUTINES
