@@ -36,9 +36,9 @@ use constant {
 };
 
 my $DEFAULT_CRITERIA_DISPATCH_TBL = {
-    STATIC => {},
-    CHAINED => {},
-    DYNAMIC => {
+    TYPE_STATIC() => {},
+    TYPE_CHAINED() => {},
+    TYPE_DYNAMIC() => {
         qw/^(.*)_like$/ => qw/_gen_like_sub/,
         qw/^(.*)_matches$/ => qw/_gen_matches_sub/,
         qw/^(.*)_is$/ => qw/_gen_is_sub/,
@@ -101,9 +101,12 @@ sub export_sub {
 
 sub add_criteria {
     my $self = shift;
-    (@_ % 2)
-        ? 0
-        : !(!push(@{$self->{criteria}}, {@_}));
+    return 0 unless (@_ > 2);
+
+    $_[2] ||= TYPE_STATIC;
+    !(!push(
+        @{$self->{criteria}->{$_[3]}},
+        {@_[0,1]}));
 }
 
 
@@ -154,15 +157,15 @@ sub compile {
 sub resolve_dispatch {
 
     my ($self, $crit) = @_;
-    my $dispatch_tbl = $self->{dispatch_tbl};;
+    my $dispatch_tbl = $self->{dispatch_tbl};
 
     #attempt quick static lookup
-    my $sub = $dispatch_tbl->{STATIC}->{$crit};
+    my $sub = $dispatch_tbl->{TYPE_STATIC()}->{$crit};
     return $sub if ($sub);
 
     #attempt more expensive lookups
     my ($tbl, @matches, @args);
-    RESOLVE_CRIT: foreach (qw/CHAINED DYNAMIC/) {
+    RESOLVE_CRIT: foreach (TYPE_CHAINED, TYPE_DYNAMIC) {
         $tbl = $dispatch_tbl->{STATIC};
         @matches = reverse(keys(%$static_tbl));
         @args;
