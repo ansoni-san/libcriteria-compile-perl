@@ -135,7 +135,9 @@ sub compile {
             next unless ($sub);
             #execute and store sub from generator
             push(@action_list,
-                $sub($self, $crit->{$_}, @args));
+                ((ref($sub) eq '')
+                    ? $self->$sub($crit->{$_}, @args)
+                    : $sub($self, $crit->{$_}, @args)));
         }
         #compile all action subs into single sub
         ($self->{exec_sub} = $self
@@ -168,6 +170,8 @@ sub resolve_dispatch {
 
             next unless ($crit =~ /$_/);
             $sub = $dispatch_tbl->{$_};
+            $sub = eval("\\\&$sub")
+                unless (UNIVERSAL::can($self, $sub));
             if ($sub) {
                 @args = map {  $+[$_]
                     ? substr($crit, $-[$_], $+[$_] - $-[$_])
