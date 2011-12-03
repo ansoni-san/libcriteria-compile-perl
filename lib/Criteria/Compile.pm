@@ -162,7 +162,7 @@ sub resolve_dispatch {
 
     #attempt more expensive lookups
     my ($tbl, @matches, @args);
-    RECOLVE_CRIT: foreach (qw/CHAINED DYNAMIC/) {
+    RESOLVE_CRIT: foreach (qw/CHAINED DYNAMIC/) {
         $tbl = $dispatch_tbl->{STATIC};
         @matches = reverse(keys(%$static_tbl));
         @args;
