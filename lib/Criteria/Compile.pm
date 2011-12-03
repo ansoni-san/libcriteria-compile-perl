@@ -57,9 +57,9 @@ use constant {
 
 my $DEFAULT_ACCESS_MODE_TBL = {
     ACC_OBJECT() => sub {
-        my ($ob, $op) = @_;
-        return &UNIVERSAL::can($ob, $op)
-            ? $ob->$op()
+        my ($ob, $attr) = @_;
+        return &UNIVERSAL::can($ob, $attr)
+            ? $ob->$attr()
             : undef;
     },
     ACC_HASH() => sub {
@@ -308,16 +308,16 @@ sub _compile_exec_sub {
 
 sub _gen_is_sub {
 
-    my ($context, $val, $op) = @_;
+    my ($context, $val, $attr) = @_;
     my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'is',
         'No attribute supplied.')
-        unless ($op);
+        unless ($attr);
 
     return sub {
         return (ref($_[0])
-            and (local $_ = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $attr)))
             ? ($_ eq $val)
             : 0;
     };
@@ -326,16 +326,16 @@ sub _gen_is_sub {
 
 sub _gen_like_sub {
 
-    my ($context, $val, $op) = @_;
+    my ($context, $val, $attr) = @_;
     my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'like',
         'No attribute supplied.')
-        unless ($op);
+        unless ($attr);
 
     return sub {
         return (ref($_[0])
-            and (local $_ = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $attr)))
             ? m/$val/
             : 0;
     };
@@ -344,16 +344,16 @@ sub _gen_like_sub {
 
 sub _gen_matches_sub {
 
-    my ($context, $val, $op) = @_;
+    my ($context, $val, $attr) = @_;
     my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'matches_than',
         'No attribute supplied.')
-        unless ($op);
+        unless ($attr);
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $attr)))
             ? ($_ ~~ $val)
             : 0;
     };
@@ -362,16 +362,16 @@ sub _gen_matches_sub {
 
 sub _gen_less_than_sub {
 
-    my ($context, $val, $op) = @_;
+    my ($context, $val, $attr) = @_;
     my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'less_than',
         'No attribute supplied.')
-        unless ($op);
+        unless ($attr);
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $attr)))
             ? ($_ lt $val)
             : 0;
     };
@@ -380,16 +380,16 @@ sub _gen_less_than_sub {
 
 sub _gen_greater_than_sub {
 
-    my ($context, $val, $op) = @_;
+    my ($context, $val, $attr) = @_;
     my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'greater_than',
         'No attribute supplied.')
-        unless ($op);
+        unless ($attr);
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $attr)))
             ? ($_ gt $val)
             : 0;
     };
@@ -398,12 +398,12 @@ sub _gen_greater_than_sub {
 
 sub _gen_sooner_than_sub {
 
-    my ($context, $val, $op) = @_;
+    my ($context, $val, $attr) = @_;
     my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'sooner_than',
         'No attribute supplied.')
-        unless ($op);
+        unless ($attr);
     die sprintf(HANDLER_DIE_MSG, 'sooner_than',
         'Value must be a HASHREF.')
         unless (ref($val) eq 'HASH');
@@ -413,7 +413,7 @@ sub _gen_sooner_than_sub {
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $attr)))
             ? ($_->subtract($val)->is_negative())
             : 0;
     };
@@ -422,12 +422,12 @@ sub _gen_sooner_than_sub {
 
 sub _gen_later_than_sub {
 
-    my ($context, $val, $op) = @_;
+    my ($context, $val, $attr) = @_;
     my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'later_than',
         'No attribute supplied.')
-        unless ($op);
+        unless ($attr);
     die sprintf(HANDLER_DIE_MSG, 'later_than',
         'Value must be a HASHREF.')
         unless (ref($val) eq 'HASH');
@@ -437,7 +437,7 @@ sub _gen_later_than_sub {
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $attr)))
             ? ($_->subtract($val)->is_positive())
             : 0;
     };
