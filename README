@@ -30,3 +30,13 @@ EXAMPLE CODE:
         #filter objects using the exported sub (calls ->title and ->author)
         return grep $criteria->($_), @things;
     }
+
+
+DEFAULT AVAILABLE GRAMMAR:
+
+    (.*)_is             EXAMPLE:    name_is => 'Anthony'
+    (.*)_like           EXAMPLE:    address_like => qr/.*London.*/
+    (.*)_greater_than   EXAMPLE:    score_greater_than => 20
+    (.*)_less_than      EXAMPLE:    score_less_than => 20
+    (.*)_in             EXAMPLE:    age_in => [16..25]
+    (.*)_matches        EXAMPLE:    user_matches => \%allowed_users
