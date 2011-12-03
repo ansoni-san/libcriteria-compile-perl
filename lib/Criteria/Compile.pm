@@ -20,6 +20,7 @@ use warnings;
 use UNIVERSAL ( );
 use Tie::IxHash ( ); 
 use DateTime ( );
+use Data::Dump::Streamer;
 
 
 
@@ -27,7 +28,7 @@ use DateTime ( );
 
 
 use constant DATETIME_CLASS => 'DateTime';
-
+use constant HANDLER_DIE_MSG => 'Failed to compile `%s`. %s';
 
 use constant {
     TYPE_STATIC => 10,
@@ -82,8 +83,6 @@ sub _init {
         $self->add_criteria(%$crit);
         die('Error: Failed to compile criteria.')
             unless ($self->compile());
-    } else {
-        $self->compile(0);
     }
     return 1;
 }
@@ -95,7 +94,15 @@ sub _init {
 
 sub export_sub {
     my $self = $_[0];
-    $self->{exec_sub} ||= $self->compile();
+    $self->compile() unless ($self->{exec_sub});
+    $self->{exec_sub};
+}
+
+
+sub exec {
+    my $self = shift;
+    $self->compile() unless ($self->{exec_sub});
+    $self->{exec_sub}->(@_);
 }
 
 
@@ -103,10 +110,10 @@ sub add_criteria {
     my $self = shift;
     return 0 unless (@_ > 2);
 
-    $_[2] ||= TYPE_STATIC;
+    my $type = @_ % 2 ? pop(@_) : TYPE_STATIC;
     !(!push(
-        @{$self->{criteria}->{$_[3]}},
-        {@_[0,1]}));
+        @{$self->{criteria}->{$type}},
+        {@_}));
 }
 
 
@@ -121,30 +128,39 @@ sub define_criteria {
 sub compile {
 	
     my ($self, $crit) = @_;
+    my $crit_map = $self->{criteria};
     my @action_list = ();
 
-    my @crit_list = @{$self->{criteria}};
+    my @crit_list;
+    push(@crit_list, @{$crit_map->{$_}})
+        foreach (keys(%$crit_map));
     push(@crit_list, $crit) if $crit;
 
-    #attempt to build subs for criterid
-    #SIDE-STEP FAILURE CONDItion compexity with blanket eval
+    #attempt to build subs for criteria
+    #side-step failure condition compexity with blanket eval
     my $last_crit = '';
     eval {
         my ($sub, @args);
-        foreach (keys(%$crit)) {
-            $last_crit = $_;
-            #lookup handler generator
-            ($sub, @args) = $self->resolve_dispatch($_);
-            next unless ($sub);
-            #execute and store sub from generator
-            push(@action_list,
-                ((ref($sub) eq '')
-                    ? $self->$sub($crit->{$_}, @args)
-                    : $sub->($self, $crit->{$_}, @args)));
+        foreach my $map (@crit_list) {
+            foreach (keys(%$map)) {
+                $last_crit = $_;
+
+                #lookup handler generator
+                ($sub, @args) = $self->resolve_dispatch($_);
+                die(sprintf(HANDLER_DIE_MSG, $_,
+                    'Handler not found.'))
+                    unless ($sub);
+
+                #execute and store sub from generator
+                push(@action_list,
+                    ((ref($sub) eq '')
+                        ? $self->$sub($map->{$_}, @args)
+                        : $sub->($self, $map->{$_}, @args)));
+            }
         }
         #compile all action subs into single sub
         ($self->{exec_sub} = $self
-            ->_compile_exec_sub(\@action_list))
+            ->_compile_exec_sub(@action_list))
     };
     if ($@) {
         chomp($@);
@@ -173,13 +189,13 @@ sub resolve_dispatch {
             next unless ($crit =~ /$_/);
             $sub = $dtype_tbl->{$_};
             if ($sub) {
-                #attempt to retrieve subref if not a method
-                $sub = ((exists &$sub) ? \&$sub : $sub)
-                    unless (UNIVERSAL::can($self, $sub));
                 #prepare args for generator    
                 @args = map {  $+[$_]
                     ? substr($crit, $-[$_], $+[$_] - $-[$_])
                     : undef } 1..$#-;
+                #attempt to retrieve subref if not a method
+                $sub = ((exists &$sub) ? \&$sub : $sub)
+                    unless (UNIVERSAL::can($self, $sub));
                 last RESOLVE_CRIT;
             }
         }
@@ -188,7 +204,7 @@ sub resolve_dispatch {
 }
 
 
-sub _export_getter {
+sub export_getter {
     return sub {
         my ($ob, $op) = @_;
         return &UNIVERSAL::can($ob, $op)
@@ -200,12 +216,12 @@ sub _export_getter {
 
 sub _compile_exec_sub {
     
-    my ($self, $actions) = @_;
+    my ($self, @actions) = @_;
     #create single multi-action execution sub
     my $sub = sub {
 	    my @args = @_;
-        foreach (@$actions) {
-            return 0 unless ($_->(@args));
+        foreach (@actions) {
+            return 0 unless($_->(@args));
         }
         return 1;
     };
@@ -247,10 +263,14 @@ sub _gen_is_sub {
 
     my ($context, $val, $op) = @_;
     my $get = $context->export_getter();
-    return unless ($op);
+
+    die sprintf(HANDLER_DIE_MSG, 'is',
+        'No attribute supplied.')
+        unless ($op);
+
     return sub {
         (ref($_[0])
-            and (local($_) = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $op)))
             ? ($_ eq $val)
             : 0;
     };
@@ -261,11 +281,15 @@ sub _gen_like_sub {
 
     my ($context, $val, $op) = @_;
     my $get = $context->export_getter();
-    return unless ($op);
+
+    die sprintf(HANDLER_DIE_MSG, 'like',
+        'No attribute supplied.')
+        unless ($op);
+
     return sub {
         (ref($_[0])
-            and (local($_) = $get->($_[0], $op)))
-            ? scalar($_ =~ qr/$val/)
+            and (local $_ = $get->($_[0], $op)))
+            ? m/$val/
             : 0;
     };
 }
@@ -275,10 +299,14 @@ sub _gen_matches_sub {
 
     my ($context, $val, $op) = @_;
     my $get = $context->export_getter();
-    return unless ($op);
+
+    die sprintf(HANDLER_DIE_MSG, 'matches_than',
+        'No attribute supplied.')
+        unless ($op);
+
     return sub {
         (ref($_[0])
-            and (local($_) = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $op)))
             ? ($_ ~~ $val)
             : 0;
     };
@@ -289,10 +317,14 @@ sub _gen_less_than_sub {
 
     my ($context, $val, $op) = @_;
     my $get = $context->export_getter();
-    return unless ($op);
+
+    die sprintf(HANDLER_DIE_MSG, 'less_than',
+        'No attribute supplied.')
+        unless ($op);
+
     return sub {
         (ref($_[0])
-            and (local($_) = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $op)))
             ? ($_ lt $val)
             : 0;
     };
@@ -303,10 +335,14 @@ sub _gen_greater_than_sub {
 
     my ($context, $val, $op) = @_;
     my $get = $context->export_getter();
-    return unless ($op);
+
+    die sprintf(HANDLER_DIE_MSG, 'greater_than',
+        'No attribute supplied.')
+        unless ($op);
+
     return sub {
         (ref($_[0])
-            and (local($_) = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $op)))
             ? ($_ gt $val)
             : 0;
     };
@@ -317,13 +353,20 @@ sub _gen_sooner_than_sub {
 
     my ($context, $val, $op) = @_;
     my $get = $context->export_getter();
-    return unless ($op);
-    return unless (ref($val) eq 'HASH');
-    return unless ($val = DATETIME_CLASS()
-        ->now()->add_duration(%$val));
+
+    die sprintf(HANDLER_DIE_MSG, 'sooner_than',
+        'No attribute supplied.')
+        unless ($op);
+    die sprintf(HANDLER_DIE_MSG, 'sooner_than',
+        'Value must be a HASHREF.')
+        unless (ref($val) eq 'HASH');
+    die sprintf(HANDLER_DIE_MSG, 'sooner_than',
+        'Value must be a valid duration delta.')
+        unless ($val = DATETIME_CLASS()->now()->add_duration(%$val));
+
     return sub {
         (ref($_[0])
-            and (local($_) = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $op)))
             ? ($_->subtract($val)->is_negative())
             : 0;
     };
@@ -335,13 +378,19 @@ sub _gen_later_than_sub {
     my ($context, $val, $op) = @_;
     my $get = $context->export_getter();
 
-    return unless ($op);
-    return unless (ref($val) eq 'HASH');
-    return unless ($val = DATETIME_CLASS()
-        ->now()->add_duration(%$val));
+    die sprintf(HANDLER_DIE_MSG, 'later_than',
+        'No attribute supplied.')
+        unless ($op);
+    die sprintf(HANDLER_DIE_MSG, 'later_than',
+        'Value must be a HASHREF.')
+        unless (ref($val) eq 'HASH');
+    die sprintf(HANDLER_DIE_MSG, 'later_than',
+        'Value must be a valid duration delta.')
+        unless ($val = DATETIME_CLASS()->now()->add_duration(%$val));
+
     return sub {
         (ref($_[0])
-            and (local($_) = $get->($_[0], $op)))
+            and (local $_ = $get->($_[0], $op)))
             ? ($_->subtract($val)->is_positive())
             : 0;
     };
