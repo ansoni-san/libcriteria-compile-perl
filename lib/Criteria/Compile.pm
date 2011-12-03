@@ -1,4 +1,4 @@
-#!/bin/perl
+
 #===================================================================================================================
 #    Script:            Compile.pm
 #    purpose:           N/A
@@ -50,6 +50,23 @@ my $DEFAULT_CRITERIA_DISPATCH_TBL = {
     }
 };
 
+use constant {
+    ACC_HASH => 'HASH',
+    ACC_OBJECT => 'OBJECT'
+};
+
+my $DEFAULT_ACCESS_MODE_TBL = {
+    ACC_OBJECT() => sub {
+        my ($ob, $op) = @_;
+        return &UNIVERSAL::can($ob, $op)
+            ? $ob->$op()
+            : undef;
+    },
+    ACC_HASH() => sub {
+        return $_[0]->{$_[1]};
+    }
+}; 
+
 
 
 #INITIALISATION ROUTINES
@@ -58,13 +75,17 @@ my $DEFAULT_CRITERIA_DISPATCH_TBL = {
 sub new {
 
     my ($class, $crit) = @_;
-    my $self = bless(
-        {dispatch_tbl => {}, exec_sub => sub { 1 }},
-        $class);
+    my $self = {
+        dispatch_tbl => {},
+        access_tbl => {},
+        exec_sub => sub { 1 }
+    };
 
+    $self = bless($self, $class);
     $self->_init($crit);
     return $self;
 }
+
 
 sub _init {
 
@@ -78,6 +99,12 @@ sub _init {
             ->Push(%{$DEFAULT_CRITERIA_DISPATCH_TBL->{$_}});
         $ordered_dt->{$_} = \%dt;
     }
+
+    #initialise default access mode tbl
+    my $a_tbl = $DEFAULT_ACCESS_MODE_TBL;
+    @{$self->{access_tbl}}{keys(%$a_tbl)} = values(%$a_tbl);
+    $self->access_mode(ACC_OBJECT);
+
     #validate any criteria supplied
     if ($crit) {
         $self->add_criteria(%$crit);
@@ -122,6 +149,28 @@ sub define_criteria {
     (scalar(@_) > 2) and 
         ($self->{dispatch_tbl}->{$_[2]}
             = $self->_bless_handler($_[3]));
+}
+
+
+sub access_mode {
+    my ($self, $mode) = @_;
+    if ($mode = $self->{access_tbl}->{$mode}) {
+        *_export_getter = $mode;
+        return 1;
+    }
+    return 0;
+}
+
+
+sub define_access_mode {
+    my ($self, $mode, $getter) = @_;
+    my $a_tbl = $self->{access_tbl};
+    #define mode if not already present
+    unless ((!$mode or !$getter)
+        or $a_tbl->{$mode}) {
+        $a_tbl->{$mode} = $getter;
+    }
+    return 0;
 }
 
 
@@ -205,30 +254,26 @@ sub resolve_dispatch {
 
 
 sub export_getter {
-    return sub {
-        my ($ob, $op) = @_;
-        return &UNIVERSAL::can($ob, $op)
-            ? $ob->$op()
-            : undef;
-    };
 }
 
 
 sub _compile_exec_sub {
     
     my ($self, @actions) = @_;
-    #create single multi-action execution sub
-    my $sub = sub {
-	    my @args = @_;
-        foreach (@actions) {
-            return 0 unless($_->(@args));
-        }
-        return 1;
-    };
-    #return sub or experimental flat sub
-    return $self->{COMPILE_EXPERIMENTAL}
-        ? $self->_expr_flatten_sub($sub)
-        : $sub;
+
+    unless ($self->{COMPILE_EXPERIMENTAL}) {
+        #create single multi-action execution sub
+        return sub {
+    	    my @args = @_;
+            foreach (@actions) {
+                return 0 unless($_->(@args));
+            }
+            return 1;
+        };
+    } else {
+        #return experimental flat sub
+        return $self->_expr_flatten_subs(@actions);
+    }
 }
 
 #EXPERIMENTAL
@@ -238,18 +283,20 @@ sub _compile_exec_sub {
     my $ret_repl = 'return 0 unless';
 
     #public subs
-    sub _expr_flatten_sub {
+    sub _expr_flatten_subs {
 
-        my @frags = Data::Dump::Streamer::Dump(@_);
+        my $self = shift;
+        my @frags = Data::Dump::Streamer::Dump(@_)->Declare(1)->Dump();
         my @matches;
         foreach (@frags) {
             #NOTE : SUPER FRAGILE, NOT VERY USEFUL
             #       FIND A BETTER WAY!!
-            if (@matches = ($_ =~ /^(.*[\^w])return([^\w].*)$/)) {
-                $_ = join('', $matches[0], $ret_repl, $matches[1]);
-            }
+            $_ =~ s/(.*[\W])return([\W][^;]*)/$1$ret_repl($2)/g;
+            $_ =~ s/(^|\W)my \$CODE[0-9]+ = sub/$1/g;
+            $_ =~ s/(^|\W)(use|package)\W[^;]*\;?//g;
         }
         push(@frags, $ret_stmt);
+        #print @frags;
         return eval(join('',
             'sub { ', @frags, ' }'));
     }
@@ -269,7 +316,7 @@ sub _gen_is_sub {
         unless ($op);
 
     return sub {
-        (ref($_[0])
+        return (ref($_[0])
             and (local $_ = $get->($_[0], $op)))
             ? ($_ eq $val)
             : 0;
@@ -287,7 +334,7 @@ sub _gen_like_sub {
         unless ($op);
 
     return sub {
-        (ref($_[0])
+        return (ref($_[0])
             and (local $_ = $get->($_[0], $op)))
             ? m/$val/
             : 0;
