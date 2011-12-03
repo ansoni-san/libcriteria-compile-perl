@@ -1,6 +1,6 @@
 #!/bin/perl
 #===================================================================================================================
-#    Script:            ObjectCriteria.pm
+#    Script:            Compile.pm
 #    purpose:           N/A
 #    date created:      11/26/2011
 #    author:            Anthony (J) Lucas
