@@ -13,6 +13,9 @@ my $build = Module::Build->new(
     dist_abstract => 'Describe wanted objects/data using grammar',
     license => 'perl',
     dist_author => 'A. J. Lucas <kaoyoriketsu@ansoni.com>',
+    build_requires => {
+        'Test::More' => 0
+    },
     requires => {
         'Tie::IxHash' => 0,
         'DateTime' => 0,

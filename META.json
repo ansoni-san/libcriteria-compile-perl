@@ -14,6 +14,11 @@
    },
    "name" : "Criteria-Compile",
    "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Test::More" : 0
+         }
+      },
       "configure" : {
          "requires" : {
             "Module::Build" : "0.38"

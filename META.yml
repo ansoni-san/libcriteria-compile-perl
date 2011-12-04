@@ -2,7 +2,8 @@
 abstract: 'Describe wanted objects/data using grammar'
 author:
   - 'A. J. Lucas <kaoyoriketsu@ansoni.com>'
-build_requires: {}
+build_requires:
+  Test::More: 0
 configure_requires:
   Module::Build: 0.38
 dynamic_config: 1
