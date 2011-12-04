@@ -1,10 +1,7 @@
-
-#===================================================================================================================
-#    Script:            Compile.pm
-#    purpose:           N/A
-#    date created:      11/26/2011
-#    author:            Anthony (J) Lucas
-#===================================================================================================================
+#  You may distribute under the terms of either the GNU General Public License
+#  or the Artistic License (the same terms as Perl itself)
+#
+#  Copyright (C) 2011 - Anthony J. Lucas - kaoyoriketsu@ansoni.com
 
 
 
@@ -14,6 +11,10 @@ package Criteria::Compile;
 
 use strict;
 use warnings;
+
+
+
+our $VERSION = '0.02';
 
 
 

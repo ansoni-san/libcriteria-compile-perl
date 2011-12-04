@@ -8,7 +8,6 @@ Module now functional. OOH-RAH!
 - Added Makefile and CPAN META files
 - Added MANIFEST file
 - Added short readme from excepts of POD
-- Removed CPAN META files from repo
 - Fixed Build.PL syntax error preventing build
 
 - Completed support for newer criteria API

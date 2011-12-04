@@ -1,7 +1,7 @@
 Build.PL
 Changes
 lib/Criteria/Compile.pm
-lib/Criteria/Criteria.pod
+lib/Criteria/Compile.pod
 Makefile.PL
 MANIFEST			This list of files
 META.json
