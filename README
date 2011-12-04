@@ -38,3 +38,13 @@ DEFAULT AVAILABLE GRAMMAR:
     (.*)_less_than      EXAMPLE:    score_less_than => 20
     (.*)_in             EXAMPLE:    age_in => [16..25]
     (.*)_matches        EXAMPLE:    user_matches => \%allowed_users
+
+
+
+CONTACT / SUPPORT
+
+    - Email:  kaoyoriketsu@ansoni.com
+    - IRC:    #perl on irc.freenode.net
+
+
+
