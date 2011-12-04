@@ -20,7 +20,6 @@ our $VERSION = '0.02';
 
 use UNIVERSAL ( );
 use Tie::IxHash ( ); 
-use DateTime ( );
 use Data::Dump::Streamer;
 
 
@@ -28,7 +27,6 @@ use Data::Dump::Streamer;
 #INIT CONFIG / VARS
 
 
-use constant DATETIME_CLASS => 'DateTime';
 use constant HANDLER_DIE_MSG => 'Failed to compile `%s`. %s';
 
 use constant {
@@ -44,10 +42,9 @@ my $DEFAULT_CRITERIA_DISPATCH_TBL = {
         qw/^(.*)_like$/ => qw/_gen_like_sub/,
         qw/^(.*)_matches$/ => qw/_gen_matches_sub/,
         qw/^(.*)_is$/ => qw/_gen_is_sub/,
+        qw/^(.*)_in$/ => qw/_gen_in_sub/,
         qw/^(.*)_less_than$/ => qw/_gen_less_than_sub/,
         qw/^(.*)_greater_than$/ => qw/_gen_greater_than_sub/,
-        qw/^(.*)_sooner_than$/ => qw/_gen_sooner_than_sub/,
-        qw/^(.*)_later_than$/ => qw/_gen_later_than_sub/
     }
 };
 
@@ -79,7 +76,7 @@ sub new {
     my $self = {
         dispatch_tbl => {},
         access_tbl => {},
-        exec_sub => sub { 1 }
+        exec_sub => sub { 11111111111 }
     };
 
     $self = bless($self, $class);
@@ -102,15 +99,14 @@ sub _init {
     }
 
     #initialise default access mode tbl
-    my $a_tbl = $DEFAULT_ACCESS_MODE_TBL;
-    @{$self->{access_tbl}}{keys(%$a_tbl)} = values(%$a_tbl);
+    $self->{access_tbl} = {%$DEFAULT_ACCESS_MODE_TBL};
     $self->access_mode(ACC_OBJECT);
 
     #validate any criteria supplied
     if ($crit) {
-        $self->add_criteria(%$crit);
         die('Error: Failed to compile criteria.')
-            unless ($self->compile());
+            unless ($self->add_criteria(%$crit)
+                and $self->compile());
     }
     return 1;
 }
@@ -136,7 +132,7 @@ sub exec {
 
 sub add_criteria {
     my $self = shift;
-    return 0 unless (@_ > 2);
+    return 0 unless (@_ > 1);
 
     my $type = @_ % 2 ? pop(@_) : TYPE_STATIC;
     !(!push(
@@ -156,7 +152,8 @@ sub define_criteria {
 sub access_mode {
     my ($self, $mode) = @_;
     if ($mode = $self->{access_tbl}->{$mode}) {
-        *_export_getter = $mode;
+        no warnings;
+        *getter = $mode;
         return 1;
     }
     return 0;
@@ -254,8 +251,7 @@ sub resolve_dispatch {
 }
 
 
-sub export_getter {
-}
+sub getter { }
 
 
 sub _compile_exec_sub {
@@ -297,7 +293,7 @@ sub _compile_exec_sub {
             $_ =~ s/(^|\W)(use|package)\W[^;]*\;?//g;
         }
         push(@frags, $ret_stmt);
-        #print @frags;
+        print @frags;
         return eval(join('',
             'sub { ', @frags, ' }'));
     }
@@ -310,7 +306,6 @@ sub _compile_exec_sub {
 sub _gen_is_sub {
 
     my ($context, $val, $attr) = @_;
-    my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'is',
         'No attribute supplied.')
@@ -318,9 +313,33 @@ sub _gen_is_sub {
 
     return sub {
         return (ref($_[0])
-            and (local $_ = $get->($_[0], $attr)))
+            and (local $_ = getter($_[0], $attr)))
             ? ($_ eq $val)
             : 0;
+    };
+}
+
+
+sub _gen_in_sub {
+
+    my ($context, $val, $attr) = @_;
+
+    die sprintf(HANDLER_DIE_MSG, 'is',
+        'No attribute supplied.')
+        unless ($attr);
+    die sprintf(HANDLER_DIE_MSG, 'is',
+        'Value supplied must be an ARRAYREF.')
+        unless (ref($val) eq 'ARRAY');
+
+    return sub {
+        my $ret = 0;
+        if (ref($_[0])
+            and (my $v = getter($_[0], $attr))) {
+            foreach (@$val) {
+                ($ret = 1, last) if ($v eq $_);
+            }
+        }
+        return $ret;
     };
 }
 
@@ -328,7 +347,6 @@ sub _gen_is_sub {
 sub _gen_like_sub {
 
     my ($context, $val, $attr) = @_;
-    my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'like',
         'No attribute supplied.')
@@ -336,7 +354,7 @@ sub _gen_like_sub {
 
     return sub {
         return (ref($_[0])
-            and (local $_ = $get->($_[0], $attr)))
+            and (local $_ = getter($_[0], $attr)))
             ? m/$val/
             : 0;
     };
@@ -346,7 +364,6 @@ sub _gen_like_sub {
 sub _gen_matches_sub {
 
     my ($context, $val, $attr) = @_;
-    my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'matches_than',
         'No attribute supplied.')
@@ -354,7 +371,7 @@ sub _gen_matches_sub {
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $attr)))
+            and (local $_ = getter($_[0], $attr)))
             ? ($_ ~~ $val)
             : 0;
     };
@@ -364,7 +381,6 @@ sub _gen_matches_sub {
 sub _gen_less_than_sub {
 
     my ($context, $val, $attr) = @_;
-    my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'less_than',
         'No attribute supplied.')
@@ -372,7 +388,7 @@ sub _gen_less_than_sub {
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $attr)))
+            and (local $_ = getter($_[0], $attr)))
             ? ($_ lt $val)
             : 0;
     };
@@ -382,7 +398,6 @@ sub _gen_less_than_sub {
 sub _gen_greater_than_sub {
 
     my ($context, $val, $attr) = @_;
-    my $get = $context->export_getter();
 
     die sprintf(HANDLER_DIE_MSG, 'greater_than',
         'No attribute supplied.')
@@ -390,64 +405,14 @@ sub _gen_greater_than_sub {
 
     return sub {
         (ref($_[0])
-            and (local $_ = $get->($_[0], $attr)))
+            and (local $_ = getter($_[0], $attr)))
             ? ($_ gt $val)
             : 0;
     };
 }
 
 
-sub _gen_sooner_than_sub {
-
-    my ($context, $val, $attr) = @_;
-    my $get = $context->export_getter();
-
-    die sprintf(HANDLER_DIE_MSG, 'sooner_than',
-        'No attribute supplied.')
-        unless ($attr);
-    die sprintf(HANDLER_DIE_MSG, 'sooner_than',
-        'Value must be a HASHREF.')
-        unless (ref($val) eq 'HASH');
-    die sprintf(HANDLER_DIE_MSG, 'sooner_than',
-        'Value must be a valid duration delta.')
-        unless ($val = DATETIME_CLASS()->now()->add_duration(%$val));
-
-    return sub {
-        (ref($_[0])
-            and (local $_ = $get->($_[0], $attr)))
-            ? ($_->subtract($val)->is_negative())
-            : 0;
-    };
-}
-
-
-sub _gen_later_than_sub {
-
-    my ($context, $val, $attr) = @_;
-    my $get = $context->export_getter();
-
-    die sprintf(HANDLER_DIE_MSG, 'later_than',
-        'No attribute supplied.')
-        unless ($attr);
-    die sprintf(HANDLER_DIE_MSG, 'later_than',
-        'Value must be a HASHREF.')
-        unless (ref($val) eq 'HASH');
-    die sprintf(HANDLER_DIE_MSG, 'later_than',
-        'Value must be a valid duration delta.')
-        unless ($val = DATETIME_CLASS()->now()->add_duration(%$val));
-
-    return sub {
-        (ref($_[0])
-            and (local $_ = $get->($_[0], $attr)))
-            ? ($_->subtract($val)->is_positive())
-            : 0;
-    };
-}
-
 
 
 
 1;
-
-
-
