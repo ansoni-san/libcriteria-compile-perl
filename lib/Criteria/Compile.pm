@@ -293,7 +293,6 @@ sub _compile_exec_sub {
             $_ =~ s/(^|\W)(use|package)\W[^;]*\;?//g;
         }
         push(@frags, $ret_stmt);
-        print @frags;
         return eval(join('',
             'sub { ', @frags, ' }'));
     }
