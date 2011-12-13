@@ -359,7 +359,6 @@ In the end, don't believe me, I could be wrong about your application and/or har
 
 This module is I<"slow">-er than it could be, as each criterion cause at least 2 subroutine calls per-check. In the future there may be a cross-compatible L<B> or XS-based variation of this module if I find the time (or anyone reading this, feel free to write it!). As yet, the speed has not been an issue for me, but there may well be a time in the future I will to want to use this for heavier or faster processing (or both!).
 
-
 =head1 SEE ALSO
 
 Nothing to see here!
