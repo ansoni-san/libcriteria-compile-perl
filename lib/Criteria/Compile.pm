@@ -20,7 +20,6 @@ our $VERSION = '0.02';
 
 use UNIVERSAL ( );
 use Tie::IxHash ( ); 
-use Data::Dump::Streamer;
 
 
 
@@ -76,7 +75,7 @@ sub new {
     my $self = {
         dispatch_tbl => {},
         access_tbl => {},
-        exec_sub => sub { 11111111111 }
+        exec_sub => sub { 1 }
     };
 
     $self = bless($self, $class);
@@ -91,7 +90,7 @@ sub _init {
 
     #initialise default criteria dispatch tbls
     my $ordered_dt = ($self->{dispatch_tbl} = {});
-    foreach (keys($DEFAULT_CRITERIA_DISPATCH_TBL)) {
+    foreach (keys(%$DEFAULT_CRITERIA_DISPATCH_TBL)) {
         #perserve order
         tie(my %dt, 'Tie::IxHash')
             ->Push(%{$DEFAULT_CRITERIA_DISPATCH_TBL->{$_}});
@@ -133,6 +132,7 @@ sub exec {
 sub add_criteria {
     my $self = shift;
     return 0 unless (@_ > 1);
+    $self->{exec_sub} = undef;
 
     my $type = @_ % 2 ? pop(@_) : TYPE_STATIC;
     !(!push(
@@ -180,7 +180,7 @@ sub compile {
 
     my @crit_list;
     push(@crit_list, @{$crit_map->{$_}})
-        foreach (keys(%$crit_map));
+        foreach (sort(keys(%$crit_map)));
     push(@crit_list, $crit) if $crit;
 
     #attempt to build subs for criteria
@@ -231,15 +231,11 @@ sub resolve_dispatch {
     RESOLVE_CRIT: foreach (TYPE_CHAINED, TYPE_DYNAMIC) {
         $dtype_tbl = $dispatch_tbl->{$_};
         @matches = reverse(keys(%$dtype_tbl));
-        foreach (@matches) {
 
-            next unless ($crit =~ /$_/);
+        foreach (@matches) {
+            next unless (@args = ($crit =~ /$_/));
             $sub = $dtype_tbl->{$_};
             if ($sub) {
-                #prepare args for generator    
-                @args = map {  $+[$_]
-                    ? substr($crit, $-[$_], $+[$_] - $-[$_])
-                    : undef } 1..$#-;
                 #attempt to retrieve subref if not a method
                 $sub = ((exists &$sub) ? \&$sub : $sub)
                     unless (UNIVERSAL::can($self, $sub));
@@ -247,7 +243,7 @@ sub resolve_dispatch {
             }
         }
     };
-    return ($sub, @args);
+    return ($sub, @args) if ($sub);
 }
 
 
@@ -258,7 +254,8 @@ sub _compile_exec_sub {
     
     my ($self, @actions) = @_;
 
-    unless ($self->{COMPILE_EXPERIMENTAL}) {
+    unless ($self->{COMPILE_EXPERIMENTAL}
+        and &_load_dds()) {
         #create single multi-action execution sub
         return sub {
     	    my @args = @_;
@@ -278,6 +275,12 @@ sub _compile_exec_sub {
     #private vars
     my $ret_stmt = 'return 1;';
     my $ret_repl = 'return 0 unless';
+    my $dds_loaded;
+
+
+    sub _load_dds {
+        $dds_loaded //= ((eval('require Data::Dump::Streamer') && !$@) ? 1 : 0);
+    }
 
     #public subs
     sub _expr_flatten_subs {

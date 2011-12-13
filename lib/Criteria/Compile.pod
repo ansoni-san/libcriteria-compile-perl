@@ -142,7 +142,7 @@ I do this because it allows anyone working with my new object / data type to eas
 As every object or data type has very diferrent uses, there will be a need to define custom grammar specific to your objects or data structures.
 This may mean a 'near' grammar which calculates distance, or a 'related_to' grammar that checks a person's family records.
 
-There are 2 parts to custom grammar definitions, the match pattern, and the grammar handler. The match pattern is a C<C<Regexp>> which determines how users can access your new grammar, in which case the handler will be called and must return an anonymous subroutine which can execute the check.
+There are 2 parts to custom grammar definitions, the match pattern, and the grammar handler. The match pattern is a C<C<Regexp>> which determines how users can access your new grammar, in which case the handler will be called and must return an anonymous subroutine which can execute the check. The grammar handler is only called once, during L<"compilation"|/compile>  
 
 A simple example of this would be the definition of the 'is' grammar. 
 
@@ -346,19 +346,18 @@ None by default.
 
 =head2 This looks slow!
 
-This module makes extensive use of anonymous subroutines and closures, and some developers have expressed that this looks slow to them. These developers have typically heard that B<"Perl subroutines are slow">, possibly even neglecting the readability and maintainability of their applications based on inaccurate assumptions, so let's clarify this I<yet again>. DO NOT OPTIMISE PREMATURELY.
+This module makes extensive use of anonymous subroutines and closures, and some developers have expressed that this looks slow to them. These developers have typically heard that B<"Perl subroutines are slow">, possibly even neglecting the readability and maintainability of their applications based on inaccurate assumptions.
 
-The built-in grammar of this module add around 3 calls per criteria checked. "WHOA" I hear you say, that's 3 + 15 subroutine calls for running 5 criteria on 3 objects. To put this into perspective, calling C<< ->now >> from the DateTime package causes B<2500 calls>. There's almost zero chance that the cost of using this module has any real impact on your application's performance.
+The built-in grammar in this module add around 3 calls per criterion. That's a 15 call overhead for running 5 criteria on 3 objects. To put this into perspective, calling C<< ->now >> from the DateTime package causes B<25 calls>. There's almost zero chance that the cost of using this module has any real impact on your application's performance.
 
-There are very few instances where the cost of performing any such optimisation to flatten the call-stack during the L<compile> method does not almost completely outweigh any slight performance gains, if not turning out slower. Even if your handlers were tiny, using simple Perl operators, you would need to run the same criteria without compiling a new one 100,000 times in a tight loop to see a .1 second gain.
+There are very few instances where the cost of performing any such optimisation to flatten the call-stack during the L<compile> method does not almost completely outweigh any slight performance gains, if not turning out slower. Even if your handlers were tiny, using simple Perl operators, you would need to run the same criteria without compiling a new one 100,000 times in a tight loop to see a 100 millisecond gain.
 
-FOR THE THEORETICIANS:    O(n)
-
-FOR THE MANAGERS:         $$$$ >> /dev/null   
+In the end, don't believe me, I could be wrong about your application and/or hardware environment. Benchmark!
+ 
 
 =head2 This is "slow"!
 
-This module is I<"slow">-er than it could be, as each criterion cause at least 2 subroutine calls per-check. In the future there may be a cross-compatible L<B> or XS-based variation of this module if I find the time (or anyone reading this, feel free to write it!). As yet, the speed has not been an issue for me, but there may well be a time in the future I will to want to use this for heavy or fast processing (or both!).
+This module is I<"slow">-er than it could be, as each criterion cause at least 2 subroutine calls per-check. In the future there may be a cross-compatible L<B> or XS-based variation of this module if I find the time (or anyone reading this, feel free to write it!). As yet, the speed has not been an issue for me, but there may well be a time in the future I will to want to use this for heavier or faster processing (or both!).
 
 
 =head1 SEE ALSO
