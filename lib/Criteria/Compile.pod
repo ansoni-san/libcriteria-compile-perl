@@ -69,154 +69,58 @@ In a similar fashion, the 'like' grammar compares an object attribute against a 
 
 =item B<Dynamic Grammar>
 
+(PROCESSING ORDER = 3)
 A dynamic grammar is, as with C<is> above, grammar which dynamically operates on object attributes by acting as a pre or post-fix. 
 All of the default grammar built-in to this module is defined as dynamic grammar.
 
 =item B<Static Grammar>
 
-A static grammar is an operation with pre-defined operands. 
+(PROCESSING ORDER = 1)
+A static grammar is an operation with pre-defined operands.
 These are useful for simplifying complex operations, or operating on information that is derived from different or multiple sources.
 These will mainly become useful when subclassing this module for use on specific object types (e.g. an EmployeeCriteria class with custom logic).
 
 =item B<Chained Grammar>
 
-Setting the 'chained' flag when defining grammar causes the grammar to be matched before the other 2 types of grammars.
+(PROCESSING ORDER = 2)
+Chained grammar is the same as dynamic grammar with the special-case of being processed before dynamic grammar.
+Typically, this behaviour is used to do something clever before redispatching to the real dynamic handler using L</resolve_dispatch>.
 
 =back
 
 =cut
 
 
-=head1 GRAMMAR
 
-=head2 List of Default Grammar
+=head1 PUBLIC CONSTANTS
+
+The following constants are provided by this package:
+
+=head2 Grammar Types
 
 =over 12
 
-=item B<C<(.*)_is>>
+=item B<C<TYPE_STATIC>>
 
-    name_is => 'Anthony'
+=item B<C<TYPE_DYNAMIC>>
 
-Evaluates the value of the field corresponding to match group 1 against the value supplied, using C<eq>
-
-=item B<C<(.*)_like>>
-
-    address_like => qr/.*London.*/
-
-Evaluates the value of the field corresponding to match group 1 against a C<Regexp> value supplied, using C<=~>
-
-=item B<C<(.*)_greater_than>>
-
-    score_greater_than => 20
-
-Evaluates the value of the field corresponding to match group 1 is greater than the supplied C<number>, using C<>> 
-
-=item B<C<(.*)_less_than>>
-
-    score_less_than => 20
-
-Evaluates the value of the field corresponding to match group 1 is less than the supplied C<number>, using C<<> 
-
-=item B<C<(.*)_in>>
-
-    age_in => [16..25]
-
-Evaluates whether the value of the field corresponding to match group 1 exists in the supplied C<ARRAYREF>, using C<eq> 
-
-=item B<C<(.*)_matches>>
-
-    user_matches => \%allowed_users
-
-Evaluates the value of the field corresponding to match group 1 against the value supplied, using C<~~> (smart match). See L<perlsyn> for more detail on smart matching.
+=item B<C<TYPE_CHAINED>>
 
 =back
 
 =cut
 
+=head2 Access Types
 
-=head2 Defining Custom Grammar
+=over 12
 
-A good practise when starting to use this module (or pattern, more precicely) will be to automatically create a subclass of this module for every new object type you develop.
-I do this because it allows anyone working with my new object / data type to easily deal with them in a simple and consistent way. Another side-effect you may notice is that this provides a great deal of encapsulation, allowing you to keep the details of exactly how to extract complex data from your objects within a package you control, should that be necessary.
+=item B<C<ACC_OBJECT>>
 
-As every object or data type has very diferrent uses, there will be a need to define custom grammar specific to your objects or data structures.
-This may mean a 'near' grammar which calculates distance, or a 'related_to' grammar that checks a person's family records.
+=item B<C<ACC_HASH>>
 
-There are 2 parts to custom grammar definitions, the match pattern, and the grammar handler. The match pattern is a C<C<Regexp>> which determines how users can access your new grammar, in which case the handler will be called and must return an anonymous subroutine which can execute the check. The grammar handler is only called once, during L<"compilation"|/compile>  
+=back
 
-A simple example of this would be the definition of the 'is' grammar. 
-
-    #DISCLAIMER: Although functional, this is not the actual implementation of 'is'.
-
-    #GRAMMAR MAPPING
-    $inst->define_grammar(qw/^(.*)_is$/, 'is_handler');
-
-    #Note: Grammar in this module is defined by decorating an instance.
-    #It is recommended to override the init method should you wish to subclass or extend this package.
-
-    #HANDLER
-    sub is_handler {
-
-        my ($context, $value, $attribute) = @_;
-        return unless ($attribute);
-
-        #for example, in: filename_is => 'something.txt'
-        #attribute will be match group 1 from the match pattern (filename)
-        #value is the value supplied to add_criteria ('something.txt')
-
-        #return a subroutine which will 'eq' against the $attribute method of objects passed in
-        return sub {
-
-            my $object = $_[0];
-            if (ref($object) {
-                my $obj_value = $object->$attribute;
-                return ($obj_value eq $value);
-            }
-            return 0;
-        };
-    }
-
-
-=head2 Defining Chained Grammar
-
-There is no special magic to chained grammar, only the expectation that the grammar's handler will internally re-dispatch to another grammar handler after making whatever changes are needed to the operands. See L</resolve_dispatch> for more information on re-dispatching.
-
-A simple example of a chained grammar would be a 'data' grammar which accesses a sub-object like below.
-It would allow a user to prefix criteria like 'content_is' as 'data_content_is' to include sub-objects as part of your criteria.
-
-
-
-    #GRAMMAR MAPPING
-    $inst->define_grammar(qw/^data_(.*)$/, 'data_chandler', 1)
-
-    #Note: Grammar in this module is defined by decorating an instance.
-    #It is recommended to override the init method should you wish to subclass or extend this package.
-
-    #HANDLER    
-    sub data_chandler {
-
-        my ($self, $value, $real_crit) = @_;
-
-        #lookup the real handler, with our prefix removed
-        my ($real_sub, @args) = $self->resolve_dispatch($real_crit);
-
-        #get the criteria subroutine from the real handler
-        return unless ($real_sub);
-        return unless ($real_sub = $self->$real_sub($value, @args));
-
-        #return a subroutine which will extract the data from the object to operate on
-        #and then call the real criteria subroutine
-        return sub {
-
-            my $object = $_[0];
-            my $data = $object->data();
-
-            #pass the object's data on to the real subroutine
-            return $real_sub->($data);
-        };
-    }
-
-Note: If speed matters, chained grammar is not for you. In such cases, use static or dynamic grammar, as you can flatten (hard-code) logic down to a single subroutine call for improved speed.
+=cut
 
 
 =head1 METHODS
@@ -333,6 +237,142 @@ Takes a criteria key, and returns the handler C<CODEREF> and the arguments requi
 This method is intended for internal usage within this module and subclasses.
 
 
+
+=head1 GRAMMAR
+
+=head2 List of Default Grammar
+
+=over 12
+
+=item B<C<(.*)_is>>
+
+    name_is => 'Anthony'
+
+Evaluates the value of the field corresponding to match group 1 against the value supplied, using C<eq>
+
+=item B<C<(.*)_like>>
+
+    address_like => qr/.*London.*/
+
+Evaluates the value of the field corresponding to match group 1 against a C<Regexp> value supplied, using C<=~>
+
+=item B<C<(.*)_greater_than>>
+
+    score_greater_than => 20
+
+Evaluates the value of the field corresponding to match group 1 is greater than the supplied C<number>, using C<>> 
+
+=item B<C<(.*)_less_than>>
+
+    score_less_than => 20
+
+Evaluates the value of the field corresponding to match group 1 is less than the supplied C<number>, using C<<> 
+
+=item B<C<(.*)_in>>
+
+    age_in => [16..25]
+
+Evaluates whether the value of the field corresponding to match group 1 exists in the supplied C<ARRAYREF>, using C<eq> 
+
+=item B<C<(.*)_matches>>
+
+    user_matches => \%allowed_users
+
+Evaluates the value of the field corresponding to match group 1 against the value supplied, using C<~~> (smart match). See L<perlsyn> for more detail on smart matching.
+
+=back
+
+=cut
+
+
+=head2 Defining Custom Grammar
+
+A good practise when starting to use this module (or pattern, more precicely) will be to automatically create a subclass of this module for every new object type you develop.
+I do this because it allows anyone working with my new object / data type to easily deal with them in a simple and consistent way. Another side-effect you may notice is that this provides a great deal of encapsulation, allowing you to keep the details of exactly how to extract complex data from your objects within a package you control, should that be necessary.
+
+As every object or data type has very diferrent uses, there will be a need to define custom grammar specific to your objects or data structures.
+This may mean a 'near' grammar which calculates distance, or a 'related_to' grammar that checks a person's family records.
+
+There are 3 parts to custom grammar definitions, the match pattern, the grammar handler, and the grammar type. The match pattern is a C<C<Regexp>> which determines how users can access your new grammar, in which case the handler will be called and must return an anonymous subroutine which can execute the check. The grammar handler is only called once, during L<"compilation"|/compile>. The grammar type is one of the L<constants provided|/"PUBLIC CONSTANTS">. 
+
+A simple example of this would be the definition of the 'is' grammar. 
+
+    #DISCLAIMER: Although functional, this is not the actual implementation of 'is'.
+
+    #GRAMMAR MAPPING
+    $inst->define_grammar(qw/^(.*)_is$/, 'is_handler',
+        Criteria::Compile::TYPE_DYNAMIC);
+
+    #Note: Grammar in this module is defined by decorating an instance.
+    #It is recommended to override the init method should you wish to subclass or extend this package.
+
+    #HANDLER
+    sub is_handler {
+
+        my ($context, $value, $attribute) = @_;
+        return unless ($attribute);
+
+        #for example, in: filename_is => 'something.txt'
+        #attribute will be match group 1 from the match pattern (filename)
+        #value is the value supplied to add_criteria ('something.txt')
+
+        #return a subroutine which will 'eq' against the $attribute method of objects passed in
+        return sub {
+
+            my $object = $_[0];
+            if (ref($object) {
+                my $obj_value = $object->$attribute;
+                return ($obj_value eq $value);
+            }
+            return 0;
+        };
+    }
+
+
+=head2 Defining Chained Grammar
+
+There is no special magic to chained grammar, only the expectation that the grammar's handler will internally re-dispatch to another grammar handler after making whatever changes are needed to the operands. See L</resolve_dispatch> for more information on re-dispatching.
+
+A simple example of a chained grammar would be a 'data' grammar which accesses a sub-object like below.
+It would allow a user to prefix criteria like 'content_is' as 'data_content_is' to include sub-objects as part of your criteria.
+
+
+
+    #GRAMMAR MAPPING
+    $inst->define_grammar(qw/^data_(.*)$/, 'data_chandler',
+        Criteria::Compile::TYPE_CHAINED);
+
+    #Note: Grammar in this module is defined by decorating an instance.
+    #It is recommended to override the init method should you wish to subclass or extend this package.
+
+    #HANDLER    
+    sub data_chandler {
+
+        my ($self, $value, $real_crit) = @_;
+
+        #lookup the real handler, with our prefix removed
+        my ($real_sub, @args) = $self->resolve_dispatch($real_crit);
+
+        #get the criteria subroutine from the real handler
+        return unless ($real_sub);
+        return unless ($real_sub = $self->$real_sub($value, @args));
+
+        #return a subroutine which will extract the data from the object to operate on
+        #and then call the real criteria subroutine
+        return sub {
+
+            my $object = $_[0];
+            my $data = $object->data();
+
+            #pass the object's data on to the real subroutine
+            return $real_sub->($data);
+        };
+    }
+
+Note: If speed matters, chained grammar is not for you. In such cases, use static or dynamic grammar, as you can flatten (hard-code) logic down to a single subroutine call for improved speed.
+
+
+
 =head1 MORE EXAMPLES
 
 See this distribution's C<examples> directory.
@@ -340,7 +380,6 @@ See this distribution's C<examples> directory.
 =head1 EXPORT
 
 None by default.
-
 
 =head1 NOTES
 
