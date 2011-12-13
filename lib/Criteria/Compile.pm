@@ -14,7 +14,7 @@ use warnings;
 
 
 
-our $VERSION = '0.02';
+our $VERSION = '0.04__1';
 
 
 
@@ -75,7 +75,8 @@ sub new {
     my $self = {
         dispatch_tbl => {},
         access_tbl => {},
-        exec_sub => sub { 1 }
+        exec_sub => sub { 1 },
+        criteria => []
     };
 
     $self = bless($self, $class);
@@ -131,13 +132,11 @@ sub exec {
 
 sub add_criteria {
     my $self = shift;
-    return 0 unless (@_ > 1);
+    return 1 unless (@_ > 0);
     $self->{exec_sub} = undef;
 
-    my $type = @_ % 2 ? pop(@_) : TYPE_STATIC;
-    !(!push(
-        @{$self->{criteria}->{$type}},
-        {@_}));
+    push(@{$self->{criteria}}, {@_});
+    return 1;
 }
 
 
@@ -175,13 +174,10 @@ sub define_access_mode {
 sub compile {
 	
     my ($self, $crit) = @_;
-    my $crit_map = $self->{criteria};
     my @action_list = ();
-
-    my @crit_list;
-    push(@crit_list, @{$crit_map->{$_}})
-        foreach (sort(keys(%$crit_map)));
+    my @crit_list = @{$self->{criteria}};
     push(@crit_list, $crit) if $crit;
+
 
     #attempt to build subs for criteria
     #side-step failure condition compexity with blanket eval

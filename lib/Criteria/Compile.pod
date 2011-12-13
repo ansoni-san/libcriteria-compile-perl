@@ -39,7 +39,7 @@ A number of useful grammars are provided out-of-the-box.
 Reading the notes section of this document is advised!
 
 
-=over 12
+=over 2
 
 =item I<Objects and data-types>
 
@@ -64,29 +64,28 @@ The criteria above matches when an object's C<title> method C<eq>'s C<TITLE-HERE
 In a similar fashion, the 'like' grammar compares an object attribute against a C<Regexp> compiled using C<qr>.
 
 
+=over 2
 
-=over 12
+=item B<Dynamic Grammar> (3)*
 
-=item B<Dynamic Grammar>
-
-(PROCESSING ORDER = 3)
 A dynamic grammar is, as with C<is> above, grammar which dynamically operates on object attributes by acting as a pre or post-fix. 
 All of the default grammar built-in to this module is defined as dynamic grammar.
 
-=item B<Static Grammar>
+=item B<Static Grammar> (1)*
 
-(PROCESSING ORDER = 1)
 A static grammar is an operation with pre-defined operands.
 These are useful for simplifying complex operations, or operating on information that is derived from different or multiple sources.
 These will mainly become useful when subclassing this module for use on specific object types (e.g. an EmployeeCriteria class with custom logic).
 
-=item B<Chained Grammar>
+=item B<Chained Grammar> (2)*
 
-(PROCESSING ORDER = 2)
 Chained grammar is the same as dynamic grammar with the special-case of being processed before dynamic grammar.
 Typically, this behaviour is used to do something clever before redispatching to the real dynamic handler using L</resolve_dispatch>.
 
 =back
+
+I<* = precedence order in the case of multiple-matching definitions>
+
 
 =cut
 
@@ -98,7 +97,7 @@ The following constants are provided by this package:
 
 =head2 Grammar Types
 
-=over 12
+=over 2
 
 =item B<C<TYPE_STATIC>>
 
@@ -112,7 +111,7 @@ The following constants are provided by this package:
 
 =head2 Access Types
 
-=over 12
+=over 2
 
 =item B<C<ACC_OBJECT>>
 
@@ -164,6 +163,16 @@ This method returns an anonymous subroutine which will internally execute the C<
 This method takes no arguments.
 
 
+=head2 compile
+
+    #alter already in-use criteria
+    $inst->add_criteria(name_like => qr/^Ben.*/);
+    #force a re-compile
+    $inst->compile();
+
+This methods forces a re-compile of the instance's criteria. This can be used to alter or recycle instances.
+This method takes an optional single argument, which is a C<HASHREF> containing additional criteria to be added with the special behaviour that they will not be stored, and will be forgotten on subsequent calls to compile
+
 =head2 access_mode
 
     $inst->access_mode(Criteria::Compile::ACC_HASH)
@@ -172,7 +181,7 @@ This method takes no arguments.
 Switches the current access mode used to examine values. Defaults to C<ACC_OBJECT>.
 Access modes accepted by default are:
 
-=over 12
+=over 2
 
 =item C<ACC_HASH>
 
@@ -241,7 +250,7 @@ This method is intended for internal usage within this module and subclasses.
 
 =head2 List of Default Grammar
 
-=over 12
+=over 2
 
 =item B<C<(.*)_is>>
 
