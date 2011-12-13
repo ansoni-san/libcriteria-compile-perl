@@ -203,21 +203,20 @@ The subroutine must return a value corresponding to the object's attribute when 
     package MySubclass;
     use parent qw( Criteria::Compile );
 
-    sub init {
+    sub _init {
         my $self = shift;
-        return 0 unless $self::SUPER->init(@_);
+        return 0 unless $self::SUPER->_init(@_);
         
         #add a new grammar
         $inst->define_grammar($match, $handler);
-    
         #add a new chained grammar
-        $inst->define_grammar($match, $handler, 1);
-        
+        $inst->define_grammar($match, $handler, $inst->TYPE_CHAINED);
         return 1;
     }
 
 Defines a new grammar for use in criteria.
-Takes the match pattern, the name of the handler sub as a string or C<CODEREF>, and a final optional boolean flag which indicates this as a chained grammar.
+Takes the match pattern, the name of the handler sub as a string or C<CODEREF>, and a final optional type flag which indicates the grammar type (Defaults to C<TYPE_DYNAMIC>).
+
 See L</"List of Default Grammar"> for a list of already-available grammars.
 See L</"Defining Custom Grammar"> for more information on grammar types.
 
