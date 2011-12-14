@@ -61,23 +61,23 @@ The simplest example of this is the 'is' grammar, which equates to an C<eq> comp
     Criteria::Compile->new(title_is => 'TITLE-HERE');
 
 The criteria above matches when an object's C<title> method C<eq>'s C<TITLE-HERE>. 
-In a similar fashion, the 'like' grammar compares an object attribute against a C<Regexp> compiled using C<qr>.
+In a similar fashion, the 'like' grammar compares an object attribute against a C<Regexp>.
 
 
 =over 2
 
-=item B<Dynamic Grammar> (3)*
+=item B<Dynamic Grammar> I<(3)*>
 
 A dynamic grammar is, as with C<is> above, grammar which dynamically operates on object attributes by acting as a pre or post-fix. 
 All of the default grammar built-in to this module is defined as dynamic grammar.
 
-=item B<Static Grammar> (1)*
+=item B<Static Grammar> I<(1)*>
 
 A static grammar is an operation with pre-defined operands.
 These are useful for simplifying complex operations, or operating on information that is derived from different or multiple sources.
 These will mainly become useful when subclassing this module for use on specific object types (e.g. an EmployeeCriteria class with custom logic).
 
-=item B<Chained Grammar> (2)*
+=item B<Chained Grammar> I<(2)*>
 
 Chained grammar is the same as dynamic grammar with the special-case of being processed before dynamic grammar.
 Typically, this behaviour is used to do something clever before redispatching to the real dynamic handler using L</resolve_dispatch>.
@@ -97,6 +97,8 @@ The following constants are provided by this package:
 
 =head2 Grammar Types
 
+Tokens used to indicate grammar types to the various subroutines in this module, such as L</define_grammar>.
+
 =over 2
 
 =item B<C<TYPE_STATIC>>
@@ -110,6 +112,8 @@ The following constants are provided by this package:
 =cut
 
 =head2 Access Types
+
+Tokens used to indicate an access mode, for use with L</access_mode> etc.
 
 =over 2
 
@@ -301,7 +305,7 @@ I do this because it allows anyone working with my new object / data type to eas
 As every object or data type has very diferrent uses, there will be a need to define custom grammar specific to your objects or data structures.
 This may mean a 'near' grammar which calculates distance, or a 'related_to' grammar that checks a person's family records.
 
-There are 3 parts to custom grammar definitions, the match pattern, the grammar handler, and the grammar type. The match pattern is a C<C<Regexp>> which determines how users can access your new grammar, in which case the handler will be called and must return an anonymous subroutine which can execute the check. The grammar handler is only called once, during L<"compilation"|/compile>. The grammar type is one of the L<constants provided|/"PUBLIC CONSTANTS">. 
+There are 3 parts to custom grammar definitions, the match pattern, the grammar handler, and the grammar type. The match pattern is a C<Regexp> which determines how users can access your new grammar, in which case the handler will be called and must return an anonymous subroutine which can execute the check. The grammar handler is only called once, during L<"compilation"|/compile>. The grammar type is one of the L<constants provided|/"PUBLIC CONSTANTS">. 
 
 A simple example of this would be the definition of the 'is' grammar. 
 
@@ -404,7 +408,7 @@ In the end, don't believe me, I could be wrong about your application and/or har
 
 =head2 This is "slow"!
 
-This module is I<"slow">-er than it could be, as each criterion cause at least 2 subroutine calls per-check. In the future there may be a cross-compatible L<B> or XS-based variation of this module if I find the time (or anyone reading this, feel free to write it!). As yet, the speed has not been an issue for me, but there may well be a time in the future I will to want to use this for heavier or faster processing (or both!).
+This module is I<"slow">-er than it could be, as each criterion causes at least 2 subroutine calls per-check. In the future there may be a cross-compatible L<B> or XS-based variation of this module if I find the time (or anyone reading this, feel free to write it!). As yet, the speed has not been an issue for me, but there may well be a time in the future I will to want to use this for heavier or faster processing (or both!).
 
 =head1 SEE ALSO
 
