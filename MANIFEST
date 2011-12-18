@@ -9,3 +9,4 @@ META.yml
 README
 t/00_use.t
 t/01_base.t
+t/06_base_grammar.t
