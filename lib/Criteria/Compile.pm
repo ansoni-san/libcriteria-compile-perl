@@ -71,7 +71,7 @@ my $DEFAULT_ACCESS_MODE_TBL = {
 
 sub new {
 
-    my ($class, $crit) = @_;
+    my ($class, %crit) = @_;
     my $self = {
         dispatch_tbl => {},
         access_tbl => {},
@@ -80,7 +80,7 @@ sub new {
     };
 
     $self = bless($self, $class);
-    $self->_init($crit);
+    $self->_init(\%crit);
     return $self;
 }
 
@@ -387,7 +387,7 @@ sub _gen_less_than_sub {
     return sub {
         (ref($_[0])
             and (local $_ = getter($_[0], $attr)))
-            ? ($_ lt $val)
+            ? ($_ < $val)
             : 0;
     };
 }
@@ -404,7 +404,7 @@ sub _gen_greater_than_sub {
     return sub {
         (ref($_[0])
             and (local $_ = getter($_[0], $attr)))
-            ? ($_ gt $val)
+            ? ($_ > $val)
             : 0;
     };
 }

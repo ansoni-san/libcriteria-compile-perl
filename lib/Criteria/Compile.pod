@@ -221,9 +221,9 @@ The subroutine must return a value corresponding to the object's attribute when 
         return 0 unless $self::SUPER->_init(@_);
         
         #add a new grammar
-        $inst->define_grammar($match, $handler);
+        $self->define_grammar($match, $handler);
         #add a new chained grammar
-        $inst->define_grammar($match, $handler, $inst->TYPE_CHAINED);
+        $self->define_grammar($match, $handler, $self->TYPE_CHAINED);
         return 1;
     }
 
