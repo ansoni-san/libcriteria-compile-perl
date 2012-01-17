@@ -1,5 +1,14 @@
 CHANGE LOG
 ----------------------------
+[Version 0.4]
+
+Module now ready for dev release.
+
+- Added unit tests for the standard functionality (none yet for custom functionality)
+- POD updated
+- General code / dist cleanup 
+
+
 
 [Version 0.2]
 
