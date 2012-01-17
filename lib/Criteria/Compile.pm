@@ -250,52 +250,16 @@ sub _compile_exec_sub {
     
     my ($self, @actions) = @_;
 
-    unless ($self->{COMPILE_EXPERIMENTAL}
-        and &_load_dds()) {
-        #create single multi-action execution sub
-        return sub {
-    	    my @args = @_;
-            foreach (@actions) {
-                return 0 unless($_->(@args));
-            }
-            return 1;
-        };
-    } else {
-        #return experimental flat sub
-        return $self->_expr_flatten_subs(@actions);
-    }
-}
-
-#EXPERIMENTAL
-{
-    #private vars
-    my $ret_stmt = 'return 1;';
-    my $ret_repl = 'return 0 unless';
-    my $dds_loaded;
-
-
-    sub _load_dds {
-        $dds_loaded //= ((eval('require Data::Dump::Streamer') && !$@) ? 1 : 0);
-    }
-
-    #public subs
-    sub _expr_flatten_subs {
-
-        my $self = shift;
-        my @frags = Data::Dump::Streamer::Dump(@_)->Declare(1)->Dump();
-        my @matches;
-        foreach (@frags) {
-            #NOTE : SUPER FRAGILE, NOT VERY USEFUL
-            #       FIND A BETTER WAY!!
-            $_ =~ s/(.*[\W])return([\W][^;]*)/$1$ret_repl($2)/g;
-            $_ =~ s/(^|\W)my \$CODE[0-9]+ = sub/$1/g;
-            $_ =~ s/(^|\W)(use|package)\W[^;]*\;?//g;
+    #create single multi-action execution sub
+    return sub {
+        my @args = @_;
+        foreach (@actions) {
+            return 0 unless($_->(@args));
         }
-        push(@frags, $ret_stmt);
-        return eval(join('',
-            'sub { ', @frags, ' }'));
-    }
+        return 1;
+    };
 }
+
 
 
 #CRITERIA FACTORY ROUTINES
