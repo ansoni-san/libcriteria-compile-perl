@@ -7,6 +7,8 @@ MANIFEST			This list of files
 META.json
 META.yml
 README
+README.md
 t/00_use.t
 t/01_base.t
+t/05_base_accessmode.t
 t/06_base_grammar.t

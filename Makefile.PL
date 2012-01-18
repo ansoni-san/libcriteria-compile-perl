@@ -5,7 +5,6 @@ WriteMakefile
   'NAME' => 'Criteria::Compile',
   'VERSION_FROM' => 'lib/Criteria/Compile.pm',
   'PREREQ_PM' => {
-                   'Data::Dump::Streamer' => 0,
                    'DateTime' => 0,
                    'Test::More' => 0,
                    'Tie::IxHash' => 0

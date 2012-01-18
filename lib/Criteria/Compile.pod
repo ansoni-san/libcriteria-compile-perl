@@ -7,7 +7,7 @@
 
 =head1 NAME
 
-Criteria::Compile (ver 0.02) - Describe wanted objects/data using grammar
+Criteria::Compile - Describe wanted objects/data using grammar
 
 =head1 SYNOPSIS
 

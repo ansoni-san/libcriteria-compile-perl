@@ -1,7 +1,7 @@
 ---
-abstract: 'Describe wanted objects/data using grammar'
+abstract: 'Describe wanted objects / data using grammar'
 author:
-  - 'A. J. Lucas <kaoyoriketsu@ansoni.com>'
+  - 'A. J. Lucas <alucas@perl.org>'
 build_requires:
   Test::More: 0
 configure_requires:
@@ -16,11 +16,10 @@ name: Criteria-Compile
 provides:
   Criteria::Compile:
     file: lib/Criteria/Compile.pm
-    version: 0.02
+    version: 0.041
 requires:
-  Data::Dump::Streamer: 0
   DateTime: 0
   Tie::IxHash: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.02
+version: 0.041
