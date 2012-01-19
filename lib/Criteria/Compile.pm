@@ -376,5 +376,26 @@ sub _gen_greater_than_sub {
 
 
 
+#//HASH HELPER CLASSES
+
+
+package Criteria::Compile::OBJECT;
+use base qw( Criteria::Compile  );
+
+
+package Criteria::Compile::HASH;
+use base qw( Criteria::Compile  );
+
+
+sub new {
+    my ($class, @args) = @_;
+    my $self = $class->SUPER::new(@args);
+    $self->access_mode(Criteria::Compile::ACC_HASH);
+    return $self;
+}
+
+
+
+
 
 1;
