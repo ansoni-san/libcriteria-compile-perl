@@ -34,7 +34,7 @@
    "provides" : {
       "Criteria::Compile" : {
          "file" : "lib/Criteria/Compile.pm",
-         "version" : "0.042"
+         "version" : "0.044"
       }
    },
    "release_status" : "stable",
@@ -43,5 +43,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.042"
+   "version" : "0.044"
 }
