@@ -14,7 +14,7 @@ use warnings;
 
 
 
-our $VERSION = '0.04__4';
+our $VERSION = '0.04__5';
 
 
 
@@ -87,7 +87,7 @@ sub new {
 
 sub _init {
 
-    my ($self, $crit) = @_;
+    my ($self, $crit, $nocomp) = @_;
 
     #initialise default criteria dispatch tbls
     my $ordered_dt = ($self->{dispatch_tbl} = {});
@@ -103,10 +103,23 @@ sub _init {
     $self->access_mode(ACC_OBJECT);
 
     #validate any criteria supplied
-    if ($crit) {
+    if ($crit and !$nocomp) {
         die('Error: Failed to compile criteria.')
             unless ($self->add_criteria(%$crit)
                 and $self->compile());
+    }
+    return 1;
+}
+
+
+sub _define_grammar_dtbl {
+    
+    my ($self, $dtbl) = @_;
+    foreach my $token (keys(%$dtbl)) {
+        my $map = $dtbl->{$token};
+        foreach (keys(%$map)) {
+            $self->define_grammar(qr/$_/, $map->{$_}, $token);
+        }
     }
     return 1;
 }
@@ -140,19 +153,22 @@ sub add_criteria {
 }
 
 
-sub define_criteria {
-    my $self = $_[0];
-    (scalar(@_) > 2) and 
-        ($self->{dispatch_tbl}->{$_[2]}
-            = $self->_bless_handler($_[3]));
+sub define_grammar {
+    my ($self, $match, $hdlr, $token) = @_;
+    return unless ($match and $hdlr);
+    $token ||= TYPE_DYNAMIC;
+    $self->{dispatch_tbl}->{$token}->{$match} = $hdlr;
+    return 1;
 }
 
 
 sub access_mode {
     my ($self, $mode) = @_;
     if ($mode = $self->{access_tbl}->{$mode}) {
+        $self->{getter} = $mode;
         no warnings;
         *getter = $mode;
+        $self->compile();
         return 1;
     }
     return 0;
@@ -178,10 +194,9 @@ sub compile {
     my @crit_list = @{$self->{criteria}};
     push(@crit_list, $crit) if $crit;
 
-
     #attempt to build subs for criteria
     #side-step failure condition compexity with blanket eval
-    my $last_crit = '';
+    my ($last_crit, $exec_sub) = '';
     eval {
         my ($sub, @args);
         foreach my $map (@crit_list) {
@@ -202,10 +217,10 @@ sub compile {
             }
         }
         #compile all action subs into single sub
-        ($self->{exec_sub} = $self
-            ->_compile_exec_sub(@action_list))
+        ($exec_sub = ($self->{exec_sub} = $self
+            ->_compile_exec_sub(@action_list)));
     };
-    if ($@) {
+    if ($@ or !($exec_sub)) {
         chomp($@);
         print("Error: Check if `$last_crit` is valid. ($@)\n");
     }
@@ -244,6 +259,9 @@ sub resolve_dispatch {
 
 
 sub getter { }
+
+
+sub _bless_handler { $_[1] }
 
 
 sub _compile_exec_sub {
