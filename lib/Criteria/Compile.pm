@@ -14,7 +14,7 @@ use warnings;
 
 
 
-our $VERSION = '0.04__55';
+our $VERSION = '0.04__60';
 
 
 
@@ -169,8 +169,6 @@ sub access_mode {
     my ($self, $mode) = @_;
     if ($mode = $self->{access_tbl}->{$mode}) {
         $self->{getter} = $mode;
-        no warnings;
-        *getter = $mode;
         $self->compile();
         return 1;
     }
@@ -261,7 +259,7 @@ sub resolve_dispatch {
 }
 
 
-sub getter { }
+sub getter { &{shift->{getter}} }
 
 
 sub _bless_handler { $_[1] }
@@ -270,7 +268,9 @@ sub _bless_handler { $_[1] }
 sub _compile_exec_sub {
     
     my ($self, @actions) = @_;
-
+    
+    #lookup getter implementation once at compile time
+    my $getter = $context->{getter};
     #create single multi-action execution sub
     return sub {
         my @args = @_;
@@ -294,9 +294,12 @@ sub _gen_is_sub {
         'No attribute supplied.')
         unless ($attr);
 
+    #lookup getter implementation once at compile time
+    my $getter = $context->{getter};
+    #create single multi-action execution sub
     return sub {
         return (ref($_[0])
-            and (local $_ = getter($_[0], $attr)))
+            and (local $_ = $getter($_[0], $attr)))
             ? ($_ eq $val)
             : 0;
     };
@@ -314,10 +317,13 @@ sub _gen_in_sub {
         'Value supplied must be an ARRAYREF.')
         unless (ref($val) eq 'ARRAY');
 
+    #lookup getter implementation once at compile time
+    my $getter = $context->{getter};
+    #create single multi-action execution sub
     return sub {
         my $ret = 0;
         if (ref($_[0])
-            and (my $v = getter($_[0], $attr))) {
+            and (my $v = $getter($_[0], $attr))) {
             foreach (@$val) {
                 ($ret = 1, last) if ($v eq $_);
             }
@@ -335,9 +341,12 @@ sub _gen_like_sub {
         'No attribute supplied.')
         unless ($attr);
 
+    #lookup getter implementation once at compile time
+    my $getter = $context->{getter};
+    #create single multi-action execution sub
     return sub {
         return (ref($_[0])
-            and (local $_ = getter($_[0], $attr)))
+            and (local $_ = $getter($_[0], $attr)))
             ? m/$val/
             : 0;
     };
@@ -352,9 +361,12 @@ sub _gen_matches_sub {
         'No attribute supplied.')
         unless ($attr);
 
+    #lookup getter implementation once at compile time
+    my $getter = $context->{getter};
+    #create single multi-action execution sub
     return sub {
         (ref($_[0])
-            and (local $_ = getter($_[0], $attr)))
+            and (local $_ = $getter($_[0], $attr)))
             ? ($_ ~~ $val)
             : 0;
     };
@@ -369,9 +381,12 @@ sub _gen_less_than_sub {
         'No attribute supplied.')
         unless ($attr);
 
+    #lookup getter implementation once at compile time
+    my $getter = $context->{getter};
+    #create single multi-action execution sub
     return sub {
         (ref($_[0])
-            and (local $_ = getter($_[0], $attr)))
+            and (local $_ = $getter($_[0], $attr)))
             ? ($_ < $val)
             : 0;
     };
@@ -386,9 +401,12 @@ sub _gen_greater_than_sub {
         'No attribute supplied.')
         unless ($attr);
 
+    #lookup getter implementation once at compile time
+    my $getter = $context->{getter};
+    #create single multi-action execution sub
     return sub {
         (ref($_[0])
-            and (local $_ = getter($_[0], $attr)))
+            and (local $_ = $getter($_[0], $attr)))
             ? ($_ > $val)
             : 0;
     };

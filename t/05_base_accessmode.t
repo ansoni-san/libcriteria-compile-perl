@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 8;
 use Carp;
 
 
@@ -32,22 +32,37 @@ foreach (keys(%test_data)) {
 
 #create test criteria
 
-my $crit = CC_CLASS()->new(%test_crit);
-ok( $crit, 'create test criteria');
+my $ocrit = CC_CLASS()->new(%test_crit);
+ok( $ocrit, 'create test object criteria');
+my $hcrit = CC_CLASS()->new(%test_crit);
+ok( $hcrit, 'create test hash criteria');
 
 
 #test object access mode
 
-ok( ($crit->access_mode(CC_CLASS()->ACC_OBJECT())
-    and $crit->exec(bless({}, 'TestPackage'))),
+ok( ($ocrit->access_mode(CC_CLASS()->ACC_OBJECT())
+    and $ocrit->exec(bless({}, 'TestPackage'))),
     'match using object access mode' );
+ok( !$ocrit->exec(bless({ n => 1 }, 'TestPackage')),
+    'negative match using object access mode' );
 
 
 #test hash access mode
 
-ok( ($crit->access_mode(CC_CLASS()->ACC_HASH())
-    and $crit->exec(\%test_data)),
+ok( ($hcrit->access_mode(CC_CLASS()->ACC_HASH())
+    and $hcrit->exec(\%test_data)),
     'match using hash access mode' );
+ok( !$hcrit->exec({}),
+    'negative match using hash access mode' );
+
+
+#test for leaks
+
+ok( $ocrit->exec(bless({}, 'TestPackage')),
+    'leak test, object criteria still matches' );
+
+
+
 
 
 done_testing();
@@ -60,7 +75,7 @@ package TestPackage;
 BEGIN {
     no strict 'refs';
     foreach (keys %main::test_data) {
-        *{"TestPackage\::$_"} = eval("sub { \$::test_data{$_} }");
+        *{"TestPackage\::$_"} = eval("sub { \$_[0]->{n} ? 'x' : \$::test_data{$_} }");
     }
 }
 

@@ -80,8 +80,9 @@ $criteria = CC_CLASS()->new();
 foreach (keys %criteria) {
     ok( ($criteria->compile({$_, $criteria{$_}})
         and $criteria->exec($test_obj)),
-        sprintf('individual grammar check for "%s"',
-            ($_ =~ s/^[^_]+_//)));
+        sprintf('individual grammar check for "%s"', 
+            ($_ =~ /^[^_]+_(.*)/)));
+
 }
 
 

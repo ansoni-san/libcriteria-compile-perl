@@ -16,7 +16,7 @@ name: Criteria-Compile
 provides:
   Criteria::Compile:
     file: lib/Criteria/Compile.pm
-    version: 0.0455
+    version: 0.0460
   Criteria::Compile::HASH:
     file: lib/Criteria/Compile.pm
     version: 0
@@ -31,4 +31,4 @@ requires:
   Tie::IxHash: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.045
+version: 0.0460
