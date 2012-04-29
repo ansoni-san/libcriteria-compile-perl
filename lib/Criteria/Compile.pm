@@ -299,7 +299,7 @@ sub _gen_is_sub {
     #create single multi-action execution sub
     return sub {
         return (ref($_[0])
-            and (local $_ = $getter($_[0], $attr)))
+            and (local $_ = $getter->($_[0], $attr)))
             ? ($_ eq $val)
             : 0;
     };
@@ -321,9 +321,9 @@ sub _gen_in_sub {
     my $getter = $context->{getter};
     #create single multi-action execution sub
     return sub {
-        my $ret = 0;
+        my ($ret, $v) = 0;
         if (ref($_[0])
-            and (my $v = $getter($_[0], $attr))) {
+            and ($v = $getter->($_[0], $attr))) {
             foreach (@$val) {
                 ($ret = 1, last) if ($v eq $_);
             }
@@ -346,7 +346,7 @@ sub _gen_like_sub {
     #create single multi-action execution sub
     return sub {
         return (ref($_[0])
-            and (local $_ = $getter($_[0], $attr)))
+            and (local $_ = $getter->($_[0], $attr)))
             ? m/$val/
             : 0;
     };
@@ -366,7 +366,7 @@ sub _gen_matches_sub {
     #create single multi-action execution sub
     return sub {
         (ref($_[0])
-            and (local $_ = $getter($_[0], $attr)))
+            and (local $_ = $getter->($_[0], $attr)))
             ? ($_ ~~ $val)
             : 0;
     };
@@ -386,7 +386,7 @@ sub _gen_less_than_sub {
     #create single multi-action execution sub
     return sub {
         (ref($_[0])
-            and (local $_ = $getter($_[0], $attr)))
+            and (local $_ = $getter->($_[0], $attr)))
             ? ($_ < $val)
             : 0;
     };
@@ -406,7 +406,7 @@ sub _gen_greater_than_sub {
     #create single multi-action execution sub
     return sub {
         (ref($_[0])
-            and (local $_ = $getter($_[0], $attr)))
+            and (local $_ = $getter->($_[0], $attr)))
             ? ($_ > $val)
             : 0;
     };
