@@ -269,8 +269,6 @@ sub _compile_exec_sub {
     
     my ($self, @actions) = @_;
     
-    #lookup getter implementation once at compile time
-    my $getter = $context->{getter};
     #create single multi-action execution sub
     return sub {
         my @args = @_;
