@@ -11,6 +11,7 @@ package Criteria::Compile;
 
 use strict;
 use warnings;
+no warnings 'uninitialized';
 
 
 
