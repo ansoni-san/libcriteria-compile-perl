@@ -14,6 +14,10 @@ use warnings;
 
 
 
+our $VERSION = '0.04__7';
+
+
+
 use DateTime ( );
 use DateTime::Duration ( );
 use Criteria::Compile ( );

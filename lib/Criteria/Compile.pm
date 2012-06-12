@@ -343,7 +343,7 @@ sub _gen_like_sub {
     my $getter = $context->{getter};
     #create single multi-action execution sub
     return sub {
-        local $_ = $getter->($_[0], $attr));
+        local $_ = $getter->($_[0], $attr);
         return m/$val/ ? 1 : 0;
     };
 }
