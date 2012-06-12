@@ -121,7 +121,7 @@ sub _define_grammar_dtbl {
     foreach my $token (keys(%$dtbl)) {
         my $map = $dtbl->{$token};
         foreach (keys(%$map)) {
-            $self->define_grammar(qr/$_/, $map->{$_}, $token);
+            $self->define_grammar($_, $map->{$_}, $token);
         }
     }
     return 1;
