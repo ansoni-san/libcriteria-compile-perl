@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 13;
+use Test::More tests => 15;
 use Carp;
 use Criteria::DateTime ( );
 use DateTime ( );
@@ -45,6 +45,8 @@ my %criteria = (
     nextweek_later_than => $test_data{oneday},
     twodays_longer_than => $test_data{oneday},
     oneday_shorter_than => $test_data{twodays},
+    lastweek_older_than => $test_data{oneday},
+    nextweek_newer_than => $test_data{oneday}
 );
 
 

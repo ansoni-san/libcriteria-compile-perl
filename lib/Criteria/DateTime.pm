@@ -27,12 +27,18 @@ use Criteria::Compile ( );
 #INIT CONFIG / VARS
 
 
+use constant DATETIME_CLASS => 'DateTime';
+use constant DURATION_CLASS => 'DateTime::Duration';
+
+
 my $DATETIME_GRAMMAR = {
     Criteria::Compile::TYPE_DYNAMIC() => {
         qw/^(.*)_before$/ => qw/_gen_before_sub/,
         qw/^(.*)_after$/ => qw/_gen_after_sub/,
         qw/^(.*)_sooner_than$/ => qw/_gen_sooner_than_sub/,
-        qw/^(.*)_later_than$/ => qw/_gen_later_than_sub/
+        qw/^(.*)_later_than$/ => qw/_gen_later_than_sub/,
+        qw/^(.*)_newer_than$/ => qw/_gen_newer_than_sub/,
+        qw/^(.*)_older_than$/ => qw/_gen_older_than_sub/
     }
 };
 my $DURATION_GRAMMAR = {
@@ -99,8 +105,8 @@ sub _del_to_dur {
     my $del = $_[0];
     #convert delta to duration
     return $del 
-        if (ref($del) eq 'DateTime::Duration');
-    return DateTime::Duration->new(%$del)
+        if (ref($del) eq DURATION_CLASS());
+    return DURATION_CLASS()->new(%$del)
         if (ref($del) eq 'HASH');
 }
 
@@ -175,7 +181,7 @@ sub _gen_sooner_than_sub {
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
-            ? ($_->epoch() < DateTime->now()->add_duration($val)->epoch())
+            ? ($_->epoch() < DATETIME_CLASS()->now()->add_duration($val)->epoch())
             : 0;
     };
 }
@@ -200,7 +206,7 @@ sub _gen_later_than_sub {
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
-            ? ($_->epoch() > DateTime->now()->add_duration($val)->epoch())
+            ? ($_->epoch() > DATETIME_CLASS()->now()->add_duration($val)->epoch())
             : 0;
     };
 }
@@ -225,7 +231,7 @@ sub _gen_shorter_than_sub {
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
-            ? ($val->clone()->subtract_duration($_)->is_positive())
+            ? (DURATION_CLASS()->compare($val, $_) > 0 ? 1 : 0)
             : 0;
     };
 }
@@ -250,10 +256,66 @@ sub _gen_longer_than_sub {
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
-            ? ($_->clone()->subtract_duration($val)->is_positive())
+            ? (DURATION_CLASS()->compare($val, $_) < 0 ? 1 : 0)
             : 0;
     };
 }
+
+
+
+sub _gen_newer_than_sub {
+
+    my ($context, $val, $attr) = @_;
+
+    #check arguments
+    die sprintf(Criteria::Compile::HANDLER_DIE_MSG(), 'newer_than',
+        'No attribute supplied.')
+        unless ($attr);
+
+    #check value is usable for comparison
+    die sprintf(Criteria::Compile::HANDLER_DIE_MSG(), 'newer_than',
+        'Value not a valid duration value')
+        unless (ref($val = _del_to_dur($val)));
+
+    #return handler sub
+    my $getter = $context->{getter};
+    return sub {
+        return (ref($_[0])
+            and (local $_ = $getter->($_[0], $attr)))
+            ? (DURATION_CLASS()->compare(
+                DATETIME_CLASS()->now->subtract_datetime($_),
+                $val) < 0 ? 1 : 0)
+            : 0;
+    };
+}
+
+
+sub _gen_older_than_sub {
+
+    my ($context, $val, $attr) = @_;
+
+    #check arguments
+    die sprintf(Criteria::Compile::HANDLER_DIE_MSG(), 'older_than',
+        'No attribute supplied.')
+        unless ($attr);
+
+    #check value is usable for comparison
+    die sprintf(Criteria::Compile::HANDLER_DIE_MSG(), 'older_than',
+        'Value not a valid duration value')
+        unless (ref($val = _del_to_dur($val)));
+
+    #return handler sub
+    my $getter = $context->{getter};
+    return sub {
+        return (ref($_[0])
+            and (local $_ = $getter->($_[0], $attr)))
+            ? (DURATION_CLASS()->compare(
+                DATETIME_CLASS()->now->subtract_datetime($_),
+                $val) > 0 ? 1 : 0)
+            : 0;
+    };
+}
+
 
 
 
