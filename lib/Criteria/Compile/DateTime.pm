@@ -5,7 +5,7 @@
 
 
 
-package Criteria::DateTime;
+package Criteria::Compile::DateTime;
 use parent qw( Criteria::Compile );
 
 
@@ -84,8 +84,6 @@ sub define_duration_grammar {
 
 #GRAMMAR HANDLER ROUTINES
 
-
-*getter = \&Criteria::Compile::getter;
 
 sub _dt_to_unix {
     
