@@ -173,7 +173,8 @@ sub access_mode {
         $self->compile();
         return 1;
     }
-    return 0;
+    
+    die( "Failed to set access_mode. Access mode dosn't exist ($mode)" );
 }
 
 
