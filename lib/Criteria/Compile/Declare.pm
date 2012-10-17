@@ -13,11 +13,12 @@ use parent qw( Criteria::Compile );
 
 use strict;
 use warnings;
+use criteria ( );
 
 
 
 require 5.14.0;
-our $VERSION = '0.04__7';
+our $VERSION = '0.04_7';
 
 
 
@@ -50,6 +51,11 @@ sub new {
 }
 
 
+sub unimport {
+    __PACKAGE__->SUPER::unimport(@_);
+}
+
+
 
 #PROTOTYPE-BASED HELPER INTERFACE
 
@@ -66,12 +72,15 @@ sub criteria (+@) {
     #die if it looks like we should have something,
     #to stop users blindly using blank criteria (which will always match)
     die DIE_MALFORMED_CRITERIA_ARGS unless (!@_||@crit);
+    
+    #respect class supplied by criteria pragma
+    my $crit_class = (criteria::class_in_effect(0)||__PACKAGE__);
 
     #create default instance
-    return __PACKAGE__->new(@crit) unless ($mode);
+    return $crit_class->new(@crit) unless ($mode);
 
     #or, create instance with custom access mode
-    my $inst = __PACKAGE__->new;
+    my $inst = $crit_class->new;
     $inst->add_criteria(@crit);
     $inst->access_mode($mode) or die DIE_MALFORMED_CRITERIA_ARGS;
     return $inst;
