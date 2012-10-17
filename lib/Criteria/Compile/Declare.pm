@@ -13,12 +13,11 @@ use parent qw( Criteria::Compile );
 
 use strict;
 use warnings;
-use criteria ( );
 
 
 
 require 5.14.0;
-our $VERSION = '0.04_7';
+our $VERSION = '0.04__7';
 
 
 
