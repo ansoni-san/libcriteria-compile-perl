@@ -70,7 +70,7 @@ sub unimport {
 
 
 sub class_in_effect {
-    (caller(($_[0]//0)+1))[10]->{HINT_USE_CLASS};
+    (caller(($_[0]//0)+1))[10]->{HINT_USE_CLASS()};
 }
 
 

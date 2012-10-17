@@ -13,7 +13,7 @@ use parent qw( Criteria::Compile );
 
 use strict;
 use warnings;
-
+use Criteria::Compile::Hints ( );
 
 
 require 5.14.0;
@@ -72,8 +72,10 @@ sub criteria (+@) {
     #to stop users blindly using blank criteria (which will always match)
     die DIE_MALFORMED_CRITERIA_ARGS unless (!@_||@crit);
     
-    #respect class supplied by criteria pragma
-    my $crit_class = (criteria::class_in_effect(0)||__PACKAGE__);
+    #respect class hints
+    my $crit_class =
+        (Criteria::Compile::Hints::class_in_effect(0)
+            ||__PACKAGE__);
 
     #create default instance
     return $crit_class->new(@crit) unless ($mode);
