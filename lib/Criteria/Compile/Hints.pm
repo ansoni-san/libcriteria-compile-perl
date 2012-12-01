@@ -1,16 +1,13 @@
-#!/bin/perl
-#===================================================================================================================
-#    Script:            Criteria/Compile/Hints.pm
-#    purpose:           Set lexical hints for the Criteria::Compile(::*) family
-#    date created:      09/03/2012
-#    author:            Anthony (J) Lucas - anthony_lucas@discovery-europe.com
-#    copyright:         Code and methodology copyright 2012 Discovery Networks Europe
-#===================================================================================================================
+#  You may distribute under the terms of either the GNU General Public License
+#  or the Artistic License (the same terms as Perl itself)
+#
+#  Copyright (C) 2011 - Anthony J. Lucas - kaoyoriketsu@ansoni.com
 
 
 
 package Criteria::Compile::Hints;
 use parent qw(Exporter);
+
 
 
 use strict;
