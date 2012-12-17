@@ -17,7 +17,7 @@ use Criteria::Compile::Hints ( );
 
 
 require 5.14.0;
-our $VERSION = '0.04__7';
+our $VERSION = '0.04__8';
 
 
 
