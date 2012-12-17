@@ -33,6 +33,7 @@ my $CLS_SHORTHAND = {
 
 use constant HPREFIX => 'criteria';
 use constant HINT_USE_CLASS => HPREFIX().'/use_class';
+use constant HINT_USE_DATETIME => HPREFIX().'/use_datetime';
 
 
 
@@ -68,6 +69,10 @@ sub unimport {
 
 sub class_in_effect {
     (caller(($_[0]//0)+1))[10]->{HINT_USE_CLASS()};
+}
+
+sub datetime_in_effect {
+    (caller(($_[0]//0)+1))[10]->{HINT_USE_DATETIME()};
 }
 
 

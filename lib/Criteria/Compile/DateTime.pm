@@ -21,6 +21,7 @@ our $VERSION = '0.04__7';
 use DateTime ( );
 use DateTime::Duration ( );
 use Criteria::Compile ( );
+use Criteria::Compile::Hints ( );
 
 
 
@@ -61,6 +62,10 @@ sub _init {
     $self->define_datetime_grammar();
     $self->define_duration_grammar();
 
+    #check for hints
+    my $dt = Criteria::Compile::Hints::datetime_in_effect();
+    $self->set_datetime($dt) if ($dt);
+
     #validate any criteria supplied
     if ($crit and !$nocomp) {
         die('Error: Failed to compile criteria.')
@@ -79,6 +84,9 @@ sub define_duration_grammar {
     Criteria::Compile::_define_grammar_dtbl($_[0], $DURATION_GRAMMAR);
 }
 
+sub set_datetime {
+    $_[0]->{target_dt} = $_[1];
+}
 
 
 
@@ -175,11 +183,13 @@ sub _gen_sooner_than_sub {
 
     #return handler sub
     my $getter = $context->{getter};
+    my $dt = $context->{target_dt};
     Carp::croak('Getter not defined!') unless ($getter);
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
-            ? ($_->epoch() < DATETIME_CLASS()->now()->add_duration($val)->epoch())
+            ? ($_->epoch() < ($dt?$dt->clone():DATETIME_CLASS()->now())
+                ->add_duration($val)->epoch())
             : 0;
     };
 }
@@ -201,10 +211,12 @@ sub _gen_later_than_sub {
 
     #return handler sub
     my $getter = $context->{getter};
+    my $dt = $context->{target_dt};
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
-            ? ($_->epoch() > DATETIME_CLASS()->now()->add_duration($val)->epoch())
+            ? ($_->epoch() > ($dt?$dt->clone():DATETIME_CLASS()->now())
+                ->add_duration($val)->epoch())
             : 0;
     };
 }
@@ -277,11 +289,12 @@ sub _gen_newer_than_sub {
 
     #return handler sub
     my $getter = $context->{getter};
+    my $dt = $context->{target_dt};
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
             ? (DURATION_CLASS()->compare(
-                DATETIME_CLASS()->now->subtract_datetime($_),
+                ($dt?$dt->clone():DATETIME_CLASS()->now())->subtract_datetime($_),
                 $val) < 0 ? 1 : 0)
             : 0;
     };
@@ -304,11 +317,12 @@ sub _gen_older_than_sub {
 
     #return handler sub
     my $getter = $context->{getter};
+    my $dt = $context->{target_dt};
     return sub {
         return (ref($_[0])
             and (local $_ = $getter->($_[0], $attr)))
             ? (DURATION_CLASS()->compare(
-                DATETIME_CLASS()->now->subtract_datetime($_),
+                ($dt?$dt->clone():DATETIME_CLASS()->now())->subtract_datetime($_),
                 $val) > 0 ? 1 : 0)
             : 0;
     };
