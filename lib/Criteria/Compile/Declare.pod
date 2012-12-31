@@ -1,0 +1,139 @@
+#  You may distribute under the terms of either the GNU General Public License
+#  or the Artistic License (the same terms as Perl itself)
+#
+#  Copyright (C) 2011 - Anthony J. Lucas - kaoyoriketsu@ansoni.com
+
+=pod
+
+=head1 NAME
+
+Criteria::Compile::Declare - declarative interface to Criteria::Compile
+
+=head1 SYNOPSIS
+
+
+Declarative wanted sub creation
+
+    my $sub = criteria_sub
+        title_is => 'EXAMPLE TITLE',
+        author_like => qr/Anthony.*/;
+
+    #find some books
+    my @books = MyBooks::Find::find($sub);
+
+
+Declarative object creation
+
+    my $criteria = criteria
+        author_like => qr/Anthony.*/;
+
+    #find some books
+    my @matches;
+    foreach (@books) {
+        if ($criteria->exec($_)) {            
+            #/ do some stuff
+
+            #store matching book
+            push(@matches, $_);
+        }
+    }
+    @matches #matching books
+
+
+=head1 DESCRIPTION
+
+This module provides a declarative, functional interface to L<Criteria::Compile|Criteria::Compile>.
+
+More complex or "advanced" settings and configuration options provded by the L<Criteria::Compile|Criteria::Compile> classes can be accessed using L<Criteria::Compile::Hints|Criteria::Compile::Hints>. You'll probably want to read L<"Hint Support"|/"Hint Support">.
+
+=cut
+
+
+=head1 PUBLIC CONSTANTS
+
+The following constants are provided by this package:
+
+=head2 Access Types
+
+Tokens used to indicate an access mode:
+
+=over 2
+
+=item B<C<ACC_OBJECT>>
+
+=item B<C<ACC_HASH>>
+
+=back
+
+See L<access mode|Criteria::Compile/"access_mode">.
+
+=cut
+
+
+=head1 PUBLIC FUNCTIONS
+
+=head2 criteria
+
+    #pass it a list
+    $inst = criteria name_is => 'Anthony', age_in => [20..40];
+
+    #another list
+    %criteria = ( lastseen_less_than => time() );
+    $inst = criteria %criteria;
+
+    #a list and custom access mode
+    $inst = criteria ACC_HASH, %criteria;
+    
+This function constructs a new criteria instance.
+It optionally takes a key-value list of criteria, which will be used to compile the criteria instance.
+Also takes an optional L<access mode|/"Access Types"> token argument (if supplied, this I<MUST> be the first argument).
+
+
+=head2 criteria_sub
+
+    $sub = criteria_sub %criteria;
+    
+This function has the same signature as L<criteria|"criteria">, with the exception that it will directly return a "wanted" subroutine (i.e. closure).
+
+=head1 HINT SUPPORT
+
+All functions provided by ths module support the following hints (in addition to those already supported by the underlying criteria classes):
+
+=over 12
+
+=item B<use_criteria>
+
+This hint overrides the criteria class instantiated by the functions provided in this module during its effect.
+
+=back
+
+=cut
+
+
+=head1 MORE EXAMPLES
+
+See this distribution's C<examples> directory.
+
+=head1 EXPORT
+
+All public functions and constants are exported by default.
+
+
+=head1 SEE ALSO
+
+L<Criteria::Compile|Criteria::Compile>, L<Criteria::Compile::Hints|Criteria::Compile::Hints>
+
+
+=head1 AUTHOR
+
+A. J. Lucas, E<lt>kaoyoriketsu@ansoni.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2011 - Anthony J. Lucas
+
+This is free software; you can redistribute it and/or modify it under the same terms as perl itself.
+
+
+
+=cut
