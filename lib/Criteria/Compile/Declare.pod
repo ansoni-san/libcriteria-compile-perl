@@ -25,7 +25,8 @@ Declarative wanted sub creation
 Declarative object creation
 
     my $criteria = criteria
-        author_like => qr/Anthony.*/;
+        author_like => qr/Anthony.*/,
+        isbn_matches => \%isbn_map;
 
     #find some books
     my @matches;
@@ -42,7 +43,7 @@ Declarative object creation
 
 =head1 DESCRIPTION
 
-This module provides a declarative, functional interface to L<Criteria::Compile|Criteria::Compile>.
+This module provides a declarative, functional interface to L<Criteria::Compile|Criteria::Compile>. B<This module requires Perl 5.14.0 or higher> (due to use of prototypes).
 
 More complex or "advanced" settings and configuration options provded by the L<Criteria::Compile|Criteria::Compile> classes can be accessed using L<Criteria::Compile::Hints|Criteria::Compile::Hints>. You'll probably want to read L<"Hint Support"|/"Hint Support">.
 
@@ -55,7 +56,7 @@ The following constants are provided by this package:
 
 =head2 Access Types
 
-Tokens used to indicate an access mode:
+See L<access mode|Criteria::Compile/"access_mode">. Tokens used to indicate an access mode:
 
 =over 2
 
@@ -64,8 +65,6 @@ Tokens used to indicate an access mode:
 =item B<C<ACC_HASH>>
 
 =back
-
-See L<access mode|Criteria::Compile/"access_mode">.
 
 =cut
 
@@ -97,13 +96,25 @@ This function has the same signature as L<criteria|"criteria">, with the excepti
 
 =head1 HINT SUPPORT
 
-All functions provided by ths module support the following hints (in addition to those already supported by the underlying criteria classes):
+All functions provided by this module support the following hints (in addition to those already supported by the underlying criteria):
 
 =over 12
 
-=item B<use_criteria>
+=item B<use_class>
 
-This hint overrides the criteria class instantiated by the functions provided in this module during its effect.
+This hint overrides the criteria class instantiated by the functions provided in this module during its effect. Here's an example using the L<Criteria::Compile::Hints|Criteria::Compile::Hints> pragma:
+
+    { #create a new scope
+        use Criteria::Compile::Hints
+            use_class => q(Criteria::DateTime);
+
+        #&criteria now returns a Criteria::DateTime instance
+        $inst = criteria %criteria; 
+    }
+
+    #default behaviour returns
+    $inst = criteria %criteria; #now returns a Critera::DateTime instance
+
 
 =back
 
